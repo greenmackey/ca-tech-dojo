@@ -17,6 +17,9 @@
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [],
 
+	// .sshを$HOMEに移動
+	"postStartCommand": "cp -r .ssh $HOME"
+
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 
