@@ -8,9 +8,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 type User struct {
@@ -50,13 +52,11 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 		token := strings.Replace(uuid.New().String(), "-", "", -1)
-		fmt.Println(user.Name, token)
 
 		_, err = db.Query("INSERT INTO users (token, name) VALUES ( ?, ? )", token, user.Name)
 		if err != nil {
 			log.Fatal(err)
 		}
-		w.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -68,14 +68,12 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(user.Name)
 
 		ec := json.NewEncoder(w)
 		err = ec.Encode(user)
 		if err != nil {
 			log.Fatal(err)
 		}
-		w.WriteHeader(http.StatusOK)
 
 	}
 }
@@ -95,16 +93,12 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		fmt.Println(user.Name, token)
-
-		w.WriteHeader(http.StatusOK)
 	}
 }
 
 func draw(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
-		token := getToken(r)
+		// token := getToken(r)
 
 		var b struct{ Times int }
 		dc := json.NewDecoder(r.Body)
@@ -113,12 +107,16 @@ func draw(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 
-		for i := b.Times; i > 0; i-- {
-
+		var chars = gacha.Draw(b.Times)
+		var resp struct{
+			Results []*Character `json:"results"`
 		}
-
-		fmt.Println(token, b)
-
+		resp.Results = chars
+		ec := json.NewEncoder(w)
+		err = ec.Encode(resp)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 
@@ -147,13 +145,21 @@ func setGacha() {
 		sum += c.likelihood
 		gacha.region = append(gacha.region, sum)
 	}
-
-	fmt.Println(gacha.characters[0], gacha.characters[1])
-	fmt.Println(gacha.region)
 }
 
-func (g Gacha) Draw(n int) []*Character{
-	return g.characters
+func (g Gacha) Draw(n int) []*Character {
+	var chars []*Character
+	rand.Seed(time.Now().UnixNano())
+	for ; n > 0; n-- {
+		p := rand.Float64()
+		for i := 0; i < len(g.characters); i++ {
+			if g.region[i] <= p && p < g.region[i+1] {
+				chars = append(chars, g.characters[i])
+				break
+			}
+		}
+	}
+	return chars
 }
 
 func main() {
