@@ -17,14 +17,20 @@ import (
 
 type User struct {
 	// Id    int    `json:"id,omitempty"`
-	Token string `json:"token,omitempty"`
-	Name  string `json:"name",omitempty`
+	// token string `json:"token,omitempty"`
+	Name string `json:"name"`
 }
 
 type Character struct {
-	Id         int     `json:"characterID"`
-	Name       string  `json:"name"`
-	likelihood float64 `json:",omitempty"`
+	Id         int    `json:"characterID"`
+	Name       string `json:"name"`
+	likelihood float64
+}
+
+type RelUserCharacter struct {
+	Id            int    `json:"userCharacterID"`
+	CharacterId   int    `json:"characterID"`
+	CharacterName string `json:"name"`
 }
 
 type Gacha struct {
@@ -35,7 +41,6 @@ type Gacha struct {
 var db *sql.DB
 var err error
 
-// var allCharacters Characters
 var gacha Gacha
 
 func getToken(r *http.Request) string {
@@ -53,7 +58,7 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		}
 		token := strings.Replace(uuid.New().String(), "-", "", -1)
 
-		_, err = db.Query("INSERT INTO users (token, name) VALUES ( ?, ? )", token, user.Name)
+		_, err = db.Exec("INSERT INTO users (token, name) VALUES ( ?, ? )", token, user.Name)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -98,7 +103,7 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 
 func draw(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
-		// token := getToken(r)
+		token := getToken(r)
 
 		var b struct{ Times int }
 		dc := json.NewDecoder(r.Body)
@@ -107,8 +112,23 @@ func draw(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 
+		subq := "insert into rel_user_character (user_token, character_id) values "
+		var placeholders []string
+		var insert []interface{}
+		for i := 0; i < b.Times; i++ {
+			placeholders = append(placeholders, "(?, ?)")
+			insert = append(insert, token, chars[i].Id)
+		}
+		q := subq + strings.Join(placeholders, ", ")
+		// fmt.Println(insert...)
+		// fmt.Println(q)
+		_, err = db.Exec(q, insert...)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		var chars = gacha.Draw(b.Times)
-		var resp struct{
+		var resp struct {
 			Results []*Character `json:"results"`
 		}
 		resp.Results = chars
