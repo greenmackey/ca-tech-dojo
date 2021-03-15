@@ -16,8 +16,6 @@ import (
 )
 
 type User struct {
-	// Id    int    `json:"id,omitempty"`
-	// token string `json:"token,omitempty"`
 	Name string `json:"name"`
 }
 
@@ -112,14 +110,16 @@ func draw(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 
-		subq := "insert into rel_user_character (user_token, character_id) values "
+		var chars = gacha.Draw(b.Times)
+
+		partialq := "insert into rel_user_character (user_token, character_id) values "
 		var placeholders []string
 		var insert []interface{}
 		for i := 0; i < b.Times; i++ {
 			placeholders = append(placeholders, "(?, ?)")
 			insert = append(insert, token, chars[i].Id)
 		}
-		q := subq + strings.Join(placeholders, ", ")
+		q := partialq + strings.Join(placeholders, ", ")
 		// fmt.Println(insert...)
 		// fmt.Println(q)
 		_, err = db.Exec(q, insert...)
@@ -127,14 +127,40 @@ func draw(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(err)
 		}
 
-		var chars = gacha.Draw(b.Times)
 		var resp struct {
 			Results []*Character `json:"results"`
 		}
 		resp.Results = chars
 		ec := json.NewEncoder(w)
-		err = ec.Encode(resp)
+		if err := ec.Encode(resp); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func listCharacters(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
+		token := getToken(r)
+
+		var rels []RelUserCharacter
+		q := `select r.id, chars.id, chars.name from rel_user_character as r
+		inner join characters as chars
+		on r.character_id = chars.id and r.user_token = ?`
+		rows, err := db.Query(q, token)
 		if err != nil {
+			log.Fatal(err)
+		}
+
+		for rows.Next() {
+			var rel RelUserCharacter
+			if err := rows.Scan(&rel.Id, &rel.CharacterId, &rel.CharacterName); err != nil {
+				log.Fatal(err)
+			}
+			rels = append(rels, rel)
+		}
+
+		ec := json.NewEncoder(w)
+		if err:= ec.Encode(rels); err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -194,5 +220,6 @@ func main() {
 	http.HandleFunc("/user/get", getUser)
 	http.HandleFunc("/user/update", updateUser)
 	http.HandleFunc("/gacha/draw", draw)
+	http.HandleFunc("/character/list", listCharacters)
 	http.ListenAndServe(":8080", nil)
 }
