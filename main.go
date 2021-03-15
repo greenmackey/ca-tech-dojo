@@ -38,8 +38,11 @@ type Gacha struct {
 
 var db *sql.DB
 var err error
-
 var gacha Gacha
+const invalidTokenMsg = "Token is invalid."
+const invalidBodyMsg = "Request body is invalid."
+const invalidMethodMsg = "Method is not allowed."
+const internalErrMsg = "Internal Server Error."
 
 func getToken(r *http.Request) string {
 	token := r.Header["X-Token"][0]
@@ -60,12 +63,16 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		err := dc.Decode(&user)
 		if err != nil {
 			log.Print(err)
+			http.Error(w, invalidBodyMsg, http.StatusBadRequest)
+			return
 		}
 		token := strings.Replace(uuid.New().String(), "-", "", -1)
 
 		_, err = db.Exec("INSERT INTO users (token, name) VALUES ( ?, ? )", token, user.Name)
 		if err != nil {
 			log.Print(err)
+			http.Error(w, internalErrMsg, http.StatusInternalServerError)
+			return
 		}
 
 		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("ALLOWED_ORIGINS"))
@@ -76,9 +83,14 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		ec := json.NewEncoder(w)
 		if err := ec.Encode(resp); err != nil {
 			log.Print(err)
+			http.Error(w, internalErrMsg, http.StatusInternalServerError)
+			return
 		}
 	case "OPTIONS":
 		dealCORS(w)
+	default:
+		http.Error(w, invalidMethodMsg, http.StatusMethodNotAllowed)
+		return
 	}
 }
 
@@ -90,15 +102,22 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 		err := db.QueryRow("select name from users where token = ?", token).Scan(&user.Name)
 		if err != nil {
 			log.Print(err)
+			http.Error(w, invalidTokenMsg, http.StatusBadRequest)
+			return
 		}
 		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("ALLOWED_ORIGINS"))
 		ec := json.NewEncoder(w)
 		err = ec.Encode(user)
 		if err != nil {
 			log.Print(err)
+			http.Error(w, internalErrMsg, http.StatusInternalServerError)
+			return
 		}
 	case "OPTIONS":
 		dealCORS(w)
+	default:
+		http.Error(w, invalidMethodMsg, http.StatusMethodNotAllowed)
+		return
 	}
 }
 
@@ -112,15 +131,30 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 		err := dc.Decode(&user)
 		if err != nil {
 			log.Print(err)
+			http.Error(w, invalidBodyMsg, http.StatusBadRequest)
+			return
 		}
 
-		_, err = db.Exec("update users set name=? where token=?", user.Name, token)
+		result, err := db.Exec("update users set name=? where token=?", user.Name, token)
 		if err != nil {
 			log.Print(err)
+			http.Error(w, invalidTokenMsg, http.StatusBadRequest)
+			return
+		} else if affected, err := result.RowsAffected(); err != nil {
+			log.Print(err)
+			http.Error(w, invalidTokenMsg, http.StatusBadRequest)
+			return
+		} else if affected == 0 {
+			log.Print("sql: no rows in result set")
+			http.Error(w, invalidTokenMsg, http.StatusBadRequest)
+			return
 		}
 		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("ALLOWED_ORIGINS"))
 	case "OPTIONS":
 		dealCORS(w)
+	default:
+		http.Error(w, invalidMethodMsg, http.StatusMethodNotAllowed)
+		return
 	}
 }
 
@@ -134,6 +168,8 @@ func drawGacha(w http.ResponseWriter, r *http.Request) {
 		err := dc.Decode(&b)
 		if err != nil {
 			log.Print(err)
+			http.Error(w, invalidBodyMsg, http.StatusBadRequest)
+			return
 		}
 
 		var chars = gacha.Draw(b.Times)
@@ -149,6 +185,8 @@ func drawGacha(w http.ResponseWriter, r *http.Request) {
 		_, err = db.Exec(q, insert...)
 		if err != nil {
 			log.Print(err)
+			http.Error(w, invalidTokenMsg, http.StatusBadRequest)
+			return
 		}
 
 		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("ALLOWED_ORIGINS"))
@@ -159,9 +197,14 @@ func drawGacha(w http.ResponseWriter, r *http.Request) {
 		ec := json.NewEncoder(w)
 		if err := ec.Encode(resp); err != nil {
 			log.Print(err)
+			http.Error(w, internalErrMsg, http.StatusInternalServerError)
+			return
 		}
 	case "OPTIONS":
 		dealCORS(w)
+	default:
+		http.Error(w, invalidMethodMsg, http.StatusMethodNotAllowed)
+		return
 	}
 }
 
@@ -170,24 +213,35 @@ func listCharacters(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		token := getToken(r)
 
+		q := "select id from users where token = ?"
+
+		if err := db.QueryRow(q, token).Scan(0); err == sql.ErrNoRows {
+			log.Print(err)
+			http.Error(w, invalidTokenMsg, http.StatusBadRequest)
+			return
+		}
+
 		var rels []RelUserCharacter
-		q := `select r.id, chars.id, chars.name from rel_user_character as r
+		q = `select r.id, chars.id, chars.name from rel_user_character as r
 		inner join characters as chars
 		on r.character_id = chars.id and r.user_token = ?`
 		rows, err := db.Query(q, token)
 		if err != nil {
 			log.Print(err)
+			http.Error(w, invalidTokenMsg, http.StatusBadRequest)
+			return
 		}
 
 		for rows.Next() {
 			var rel RelUserCharacter
 			if err := rows.Scan(&rel.Id, &rel.CharacterId, &rel.CharacterName); err != nil {
 				log.Print(err)
+				http.Error(w, internalErrMsg, http.StatusInternalServerError)
+				return
 			}
 			rels = append(rels, rel)
 		}
 
-		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("ALLOWED_ORIGINS"))
 		var resp struct {
 			RelsUserCharacter []RelUserCharacter `json:"characters"`
 		}
@@ -195,9 +249,15 @@ func listCharacters(w http.ResponseWriter, r *http.Request) {
 		ec := json.NewEncoder(w)
 		if err := ec.Encode(resp); err != nil {
 			log.Print(err)
+			http.Error(w, internalErrMsg, http.StatusInternalServerError)
+			return
 		}
+		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("ALLOWED_ORIGINS"))
 	case "OPTIONS":
 		dealCORS(w)
+	default:
+		http.Error(w, invalidMethodMsg, http.StatusMethodNotAllowed)
+		return
 	}
 }
 
