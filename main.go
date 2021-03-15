@@ -20,14 +20,14 @@ type User struct {
 }
 
 type Character struct {
-	Id         int    `json:"characterID"`
+	Id         string `json:"characterID"`
 	Name       string `json:"name"`
 	likelihood float64
 }
 
 type RelUserCharacter struct {
-	Id            int    `json:"userCharacterID"`
-	CharacterId   int    `json:"characterID"`
+	Id            string `json:"userCharacterID"`
+	CharacterId   string `json:"characterID"`
 	CharacterName string `json:"name"`
 }
 
@@ -160,7 +160,7 @@ func listCharacters(w http.ResponseWriter, r *http.Request) {
 		}
 
 		ec := json.NewEncoder(w)
-		if err:= ec.Encode(rels); err != nil {
+		if err := ec.Encode(rels); err != nil {
 			log.Fatal(err)
 		}
 	}
