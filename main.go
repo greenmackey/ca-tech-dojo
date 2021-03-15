@@ -20,14 +20,14 @@ type User struct {
 }
 
 type Character struct {
-	Id         int `json:"characterID,string"`
+	Id         int    `json:"characterID,string"`
 	Name       string `json:"name"`
 	likelihood float64
 }
 
 type RelUserCharacter struct {
-	Id            int `json:"userCharacterID,string"`
-	CharacterId   int `json:"characterID,string"`
+	Id            int    `json:"userCharacterID,string"`
+	CharacterId   int    `json:"characterID,string"`
 	CharacterName string `json:"name"`
 }
 
@@ -47,7 +47,7 @@ func getToken(r *http.Request) string {
 }
 
 func dealCORS(w http.ResponseWriter) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Origin", os.Getenv("ALLOWED_ORIGINS"))
 	w.Header().Set("Access-Control-Allow-Methods", "POST,GET,PUT")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Token")
 }
@@ -59,23 +59,23 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		dc := json.NewDecoder(r.Body)
 		err := dc.Decode(&user)
 		if err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 		token := strings.Replace(uuid.New().String(), "-", "", -1)
 
 		_, err = db.Exec("INSERT INTO users (token, name) VALUES ( ?, ? )", token, user.Name)
 		if err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("ALLOWED_ORIGINS"))
 		var resp struct {
 			Token string `json:"token"`
 		}
 		resp.Token = token
 		ec := json.NewEncoder(w)
 		if err := ec.Encode(resp); err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 	case "OPTIONS":
 		dealCORS(w)
@@ -89,13 +89,13 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 		var user User
 		err := db.QueryRow("select name from users where token = ?", token).Scan(&user.Name)
 		if err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("ALLOWED_ORIGINS"))
 		ec := json.NewEncoder(w)
 		err = ec.Encode(user)
 		if err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 	case "OPTIONS":
 		dealCORS(w)
@@ -111,14 +111,14 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 		dc := json.NewDecoder(r.Body)
 		err := dc.Decode(&user)
 		if err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 
 		_, err = db.Exec("update users set name=? where token=?", user.Name, token)
 		if err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("ALLOWED_ORIGINS"))
 	case "OPTIONS":
 		dealCORS(w)
 	}
@@ -133,7 +133,7 @@ func drawGacha(w http.ResponseWriter, r *http.Request) {
 		dc := json.NewDecoder(r.Body)
 		err := dc.Decode(&b)
 		if err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 
 		var chars = gacha.Draw(b.Times)
@@ -148,17 +148,17 @@ func drawGacha(w http.ResponseWriter, r *http.Request) {
 		q := partialq + strings.Join(placeholders, ", ")
 		_, err = db.Exec(q, insert...)
 		if err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("ALLOWED_ORIGINS"))
 		var resp struct {
 			Characters []*Character `json:"results"`
 		}
 		resp.Characters = chars
 		ec := json.NewEncoder(w)
 		if err := ec.Encode(resp); err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 	case "OPTIONS":
 		dealCORS(w)
@@ -176,33 +176,37 @@ func listCharacters(w http.ResponseWriter, r *http.Request) {
 		on r.character_id = chars.id and r.user_token = ?`
 		rows, err := db.Query(q, token)
 		if err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 
 		for rows.Next() {
 			var rel RelUserCharacter
 			if err := rows.Scan(&rel.Id, &rel.CharacterId, &rel.CharacterName); err != nil {
-				log.Fatal(err)
+				log.Print(err)
 			}
 			rels = append(rels, rel)
 		}
 
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		var resp struct{ RelsUserCharacter []RelUserCharacter `json:"characters"`}
+		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("ALLOWED_ORIGINS"))
+		var resp struct {
+			RelsUserCharacter []RelUserCharacter `json:"characters"`
+		}
 		resp.RelsUserCharacter = rels
 		ec := json.NewEncoder(w)
 		if err := ec.Encode(resp); err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 	case "OPTIONS":
 		dealCORS(w)
 	}
 }
 
-func setGacha() {
+func NewGacha() (Gacha, error) {
+	var gacha Gacha
+
 	rows, err := db.Query("select id, name, likelihood from characters order by id asc")
 	if err != nil {
-		log.Fatal(rows)
+		return Gacha{}, err
 	}
 
 	var total float64
@@ -211,7 +215,7 @@ func setGacha() {
 		var c Character
 		err := rows.Scan(&c.Id, &c.Name, &c.likelihood)
 		if err != nil {
-			log.Fatal(err)
+			return Gacha{}, err
 		}
 		gacha.characters = append(gacha.characters, &c)
 		total += c.likelihood
@@ -224,6 +228,7 @@ func setGacha() {
 		sum += c.likelihood
 		gacha.region = append(gacha.region, sum)
 	}
+	return gacha, nil
 }
 
 func (g Gacha) Draw(n int) []*Character {
@@ -248,11 +253,14 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	setGacha()
+	gacha, err = NewGacha()
+	if err != nil {
+		log.Fatal(err)
+	}
 	http.HandleFunc("/user/create", createUser)
 	http.HandleFunc("/user/get", getUser)
 	http.HandleFunc("/user/update", updateUser)
 	http.HandleFunc("/gacha/draw", drawGacha)
 	http.HandleFunc("/character/list", listCharacters)
-	http.ListenAndServe(":8080", nil)
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
