@@ -46,8 +46,15 @@ func getToken(r *http.Request) string {
 	return token
 }
 
+func dealCORS(w http.ResponseWriter) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST,GET,PUT")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Token")
+}
+
 func createUser(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "POST" {
+	switch r.Method {
+	case "POST":
 		var user User
 		dc := json.NewDecoder(r.Body)
 		err := dc.Decode(&user)
@@ -60,29 +67,45 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		var resp struct {
+			Token string `json:"token"`
+		}
+		resp.Token = token
+		ec := json.NewEncoder(w)
+		if err := ec.Encode(resp); err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(token)
+	case "OPTIONS":
+		dealCORS(w)
 	}
 }
 
 func getUser(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
+	switch r.Method {
+	case "GET":
 		token := getToken(r)
 		var user User
 		err := db.QueryRow("select name from users where token = ?", token).Scan(&user.Name)
 		if err != nil {
 			log.Fatal(err)
 		}
-
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		ec := json.NewEncoder(w)
 		err = ec.Encode(user)
 		if err != nil {
 			log.Fatal(err)
 		}
-
+	case "OPTIONS":
+		dealCORS(w)
 	}
 }
 
 func updateUser(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "PUT" {
+	switch r.Method {
+	case "PUT":
 		token := getToken(r)
 
 		var user User
@@ -96,11 +119,15 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatal(err)
 		}
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+	case "OPTIONS":
+		dealCORS(w)
 	}
 }
 
-func draw(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "POST" {
+func drawGacha(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "POST":
 		token := getToken(r)
 
 		var b struct{ Times int }
@@ -120,26 +147,28 @@ func draw(w http.ResponseWriter, r *http.Request) {
 			insert = append(insert, token, chars[i].Id)
 		}
 		q := partialq + strings.Join(placeholders, ", ")
-		// fmt.Println(insert...)
-		// fmt.Println(q)
 		_, err = db.Exec(q, insert...)
 		if err != nil {
 			log.Fatal(err)
 		}
 
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		var resp struct {
-			Results []*Character `json:"results"`
+			Characters []*Character `json:"results"`
 		}
-		resp.Results = chars
+		resp.Characters = chars
 		ec := json.NewEncoder(w)
 		if err := ec.Encode(resp); err != nil {
 			log.Fatal(err)
 		}
+	case "OPTIONS":
+		dealCORS(w)
 	}
 }
 
 func listCharacters(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
+	switch r.Method {
+	case "GET":
 		token := getToken(r)
 
 		var rels []RelUserCharacter
@@ -159,10 +188,15 @@ func listCharacters(w http.ResponseWriter, r *http.Request) {
 			rels = append(rels, rel)
 		}
 
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		var resp struct{ RelsUserCharacter []RelUserCharacter `json:"characters"`}
+		resp.RelsUserCharacter = rels
 		ec := json.NewEncoder(w)
-		if err := ec.Encode(rels); err != nil {
+		if err := ec.Encode(resp); err != nil {
 			log.Fatal(err)
 		}
+	case "OPTIONS":
+		dealCORS(w)
 	}
 }
 
@@ -210,7 +244,7 @@ func (g Gacha) Draw(n int) []*Character {
 
 func main() {
 	godotenv.Load()
-	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s)/%s", os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_NAME"))
+	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s)/%s", os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_ADDRESS"), os.Getenv("DB_NAME"))
 	db, err = sql.Open("mysql", dataSourceName)
 	if err != nil {
 		log.Fatal(err)
@@ -219,7 +253,7 @@ func main() {
 	http.HandleFunc("/user/create", createUser)
 	http.HandleFunc("/user/get", getUser)
 	http.HandleFunc("/user/update", updateUser)
-	http.HandleFunc("/gacha/draw", draw)
+	http.HandleFunc("/gacha/draw", drawGacha)
 	http.HandleFunc("/character/list", listCharacters)
 	http.ListenAndServe(":8080", nil)
 }
