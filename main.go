@@ -20,14 +20,14 @@ type User struct {
 }
 
 type Character struct {
-	Id         string `json:"characterID"`
+	Id         int `json:"characterID,string"`
 	Name       string `json:"name"`
 	likelihood float64
 }
 
 type RelUserCharacter struct {
-	Id            string `json:"userCharacterID"`
-	CharacterId   string `json:"characterID"`
+	Id            int `json:"userCharacterID,string"`
+	CharacterId   int `json:"characterID,string"`
 	CharacterName string `json:"name"`
 }
 
@@ -77,7 +77,6 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		if err := ec.Encode(resp); err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(token)
 	case "OPTIONS":
 		dealCORS(w)
 	}
