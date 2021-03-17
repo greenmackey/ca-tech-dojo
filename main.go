@@ -23,6 +23,9 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// ログの設定
+	initLog()
+
 	// ルーティングとサーバの起動
 	initServer()
 }
