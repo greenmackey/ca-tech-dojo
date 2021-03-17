@@ -1,0 +1,22 @@
+version: "3"
+
+services:
+  db-development:
+    image: mysql
+    volumes:
+      - ca-tech-dojo-db:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+  go-development:
+    depends_on:
+      - db-development
+    build:
+      context: .
+    command: bash -c "while sleep 1000; do :; done"
+    restart: always
+    volumes:
+      - .:/workspace/ca-tech-dojo
+volumes:
+  ca-tech-dojo-db:
+    external: true
