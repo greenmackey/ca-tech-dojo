@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
 	"log"
@@ -15,6 +16,7 @@ const invalidTokenMsg = "Token is invalid."
 const invalidBodyMsg = "Request body is invalid."
 const invalidMethodMsg = "Method is not allowed."
 const internalErrMsg = "Internal Server Error."
+const secret = "***"
 
 // トークンの取得
 func getToken(r *http.Request) string {
@@ -48,11 +50,13 @@ func allowOrigins(w http.ResponseWriter, r *http.Request) {
 // いればtrueを返す
 // いなければエラーメッセージをレスポンスボディに書き込み，falseを返す
 func verifyToken(w http.ResponseWriter, token string) bool {
-	q := "select id from users where token = ?"
-	if err := db.QueryRow(q, token).Scan(0); err == sql.ErrNoRows {
+	fq := "SELECT id FROM users WHERE token = %v"
+	if err := db.QueryRow(strings.Replace(fq, "%v", "?", -1), token).Scan(0); err == sql.ErrNoRows {
 		log.Print(err)
 		http.Error(w, invalidTokenMsg, http.StatusBadRequest)
 		return false
+	} else {
+		log.Print(fmt.Sprintf(fq, secret))
 	}
 	return true
 }
@@ -66,7 +70,6 @@ func initServer() {
 	http.HandleFunc("/character/list", listCharacters)
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
-
 
 func createUser(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
@@ -90,11 +93,14 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 
 		// DBに追加
 		// ユーザのトークンと名前を追加
-		_, err = db.Exec("INSERT INTO users (token, name) VALUES ( ?, ? )", token, user.Name)
+		fq := "INSERT INTO users (token, name) VALUES ( %v, %v )"
+		_, err = db.Exec(fmt.Sprintf(fq, "?", "?"), token, user.Name)
 		if err != nil {
 			log.Print(err)
 			http.Error(w, internalErrMsg, http.StatusInternalServerError)
 			return
+		} else {
+			log.Print(fmt.Sprintf(fq, secret, user.Name))
 		}
 
 		// レスポンスbodyの作成
@@ -128,11 +134,14 @@ func getUser(w http.ResponseWriter, r *http.Request) {
 
 		// DBからユーザ情報取得
 		var user User
-		err := db.QueryRow("select name from users where token = ?", token).Scan(&user.Name)
+		fq := "SELECT name FROM users WHERE token = %v"
+		err := db.QueryRow(strings.Replace(fq, "%v", "?", -1), token).Scan(&user.Name)
 		if err != nil {
 			log.Print(err)
 			http.Error(w, invalidTokenMsg, http.StatusBadRequest)
 			return
+		} else {
+			log.Print(fmt.Sprintf(fq, secret))
 		}
 
 		// レスポンスbodyの作成
@@ -162,7 +171,9 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 		token := getToken(r)
 
 		// 該当するユーザの存在確認
-		if !verifyToken(w, token) {return}
+		if !verifyToken(w, token) {
+			return
+		}
 
 		// リクエストbodyの内容取得
 		// 新しいユーザの名前を取得
@@ -178,10 +189,13 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 		// DB更新
 		// ユーザの名前を更新
 		// 該当するユーザが見つからなければエラー
-		_, err = db.Exec("update users set name=? where token=?", user.Name, token)
+		fq := "UPDATE users SET name=%v WHERE token=%v"
+		_, err = db.Exec(strings.Replace(fq, "%v", "?", -1), user.Name, token)
 		if err != nil {
 			log.Print(err)
 			http.Error(w, invalidTokenMsg, http.StatusBadRequest)
+		} else {
+			log.Print(fmt.Sprintf(fq, user.Name, secret))
 		}
 	case "OPTIONS":
 		dealCORS(w, r)
@@ -201,7 +215,9 @@ func drawGacha(w http.ResponseWriter, r *http.Request) {
 		token := getToken(r)
 
 		// 該当するユーザの存在確認
-		if !verifyToken(w, token) {return}
+		if !verifyToken(w, token) {
+			return
+		}
 
 		// リクエストbodyの内容取得
 		// ガチャ回数を受け取る
@@ -223,19 +239,21 @@ func drawGacha(w http.ResponseWriter, r *http.Request) {
 		var chars = gacha.Draw(b.Times)
 
 		// DBにガチャの結果を反映
-		partialq := "insert into rel_user_character (user_token, character_id) values "
+		partialfq := "INSERT INTO rel_user_character (user_token, character_id) VALUES "
 		var placeholders []string
 		var insert []interface{}
 		for i := 0; i < b.Times; i++ {
-			placeholders = append(placeholders, "(?, ?)")
+			placeholders = append(placeholders, "(%v, %v)")
 			insert = append(insert, token, chars[i].Id)
 		}
-		q := partialq + strings.Join(placeholders, ", ")
-		_, err = db.Exec(q, insert...)
+		fq := partialfq + strings.Join(placeholders, ", ")
+		_, err = db.Exec(strings.Replace(fq, "%v", "?", -1), insert...)
 		if err != nil {
 			log.Print(err)
 			http.Error(w, invalidTokenMsg, http.StatusBadRequest)
 			return
+		} else {
+			log.Print(strings.Replace(fmt.Sprintf(fq, insert...), token, secret, -1))
 		}
 
 		// レスボンスbodyの作成
@@ -268,18 +286,22 @@ func listCharacters(w http.ResponseWriter, r *http.Request) {
 		token := getToken(r)
 
 		// 該当するユーザの存在確認
-		if !verifyToken(w, token) {return}
+		if !verifyToken(w, token) {
+			return
+		}
 
 		// DBからユーザのガチャ結果を取得
 		var rels []RelUserCharacter
-		q := `select r.id, chars.id, chars.name from rel_user_character as r
-		inner join characters as chars
-		on r.character_id = chars.id and r.user_token = ?`
-		rows, err := db.Query(q, token)
+		fq := `SELECT r.id, chars.id, chars.name FROM rel_user_character as r
+		INNER JOIN characters AS chars
+		ON r.character_id = chars.id AND r.user_token = %v`
+		rows, err := db.Query(strings.Replace(fq, "%v", "?", -1), token)
 		if err != nil {
 			log.Print(err)
 			http.Error(w, invalidTokenMsg, http.StatusBadRequest)
 			return
+		} else {
+			log.Print(fmt.Sprintf(fq, secret))
 		}
 
 		// ガチャ結果をスライス relsに格納
