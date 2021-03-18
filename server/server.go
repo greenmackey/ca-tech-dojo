@@ -33,7 +33,7 @@ func dealCORS(w http.ResponseWriter, r *http.Request) {
 // CORSに対応するようにAccess-Control-Allow-Originに書き込み
 // リストに載っているオリジンだけ許可
 func allowOrigins(w http.ResponseWriter, r *http.Request) {
-	if origin := r.Header.Get("Origin"); origin == "" {
+	if origin := r.Header.Get("Origin"); origin != "" {
 		allowedOrigins := strings.FieldsFunc(os.Getenv("ALLOWED_ORIGINS"), func(r rune) bool { return r == 44 || r == 32 })
 		for _, a := range allowedOrigins {
 			if origin == a {
