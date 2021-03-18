@@ -16,7 +16,7 @@ services:
     command: bash -c "while sleep 1000; do :; done"
     restart: always
     volumes:
-      - .:/workspace/ca-tech-dojo
+      - .:/ca-tech-dojo
 volumes:
   ca-tech-dojo-db:
     external: true

@@ -3,7 +3,7 @@
 {
 	"name": "CA TECH DOJO",
 
-	"workspaceFolder": "/workspace/ca-tech-dojo",
+	"workspaceFolder": "/ca-tech-dojo",
 
 	// Update the 'dockerFile' property if you aren't using the standard 'Dockerfile' filename.
 	"dockerComposeFile": "../docker-compose.yml",
