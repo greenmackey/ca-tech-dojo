@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/joho/godotenv"
+	"github.com/gorilla/mux"
   "log"
 	"ca-tech-dojo/db"
 	"ca-tech-dojo/server"
@@ -25,10 +26,14 @@ func main() {
 	initLog()
 
 	// ルーティングとサーバの起動
-	http.HandleFunc("/user/create", server.CreateUser)
-	http.HandleFunc("/user/get", server.GetUser)
-	http.HandleFunc("/user/update", server.UpdateUser)
-	http.HandleFunc("/gacha/draw", server.DrawGacha)
-	http.HandleFunc("/character/list", server.ListCharacters)
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	r := mux.NewRouter()
+	u := r.PathPrefix("/user").Subrouter()
+	u.HandleFunc("/create", server.CreateUser).Methods("POST", "OPTIONS")
+	u.HandleFunc("/get", server.GetUser).Methods("GET", "OPTIONS")
+	u.HandleFunc("/update", server.UpdateUser).Methods("PUT", "OPTIONS")
+	r.HandleFunc("/gacha/draw", server.DrawGacha).Methods("POST", "OPTIONS")
+	r.HandleFunc("/character/list", server.ListCharacters).Methods("GET", "OPTIONS")
+	// CORS Access-Control-Allowed-Methodsを自動的に付加
+	u.Use(mux.CORSMethodMiddleware(u))
+	log.Fatal(http.ListenAndServe(":8080", r))
 }

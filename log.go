@@ -14,7 +14,7 @@ func initLog() {
 	}
 	multi := io.MultiWriter(f, os.Stdout)
 
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	log.SetFlags(log.LstdFlags | log.Llongfile | log.Lmsgprefix)
 	log.SetPrefix("😮 ")
 	log.SetOutput(multi)
 }
