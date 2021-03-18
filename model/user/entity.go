@@ -1,13 +1,7 @@
-package main
+package user
 
 type User struct {
 	Name string `json:"name"`
-}
-
-type Character struct {
-	Id         int    `json:"characterID,string"`
-	Name       string `json:"name"`
-	likelihood float64
 }
 
 type RelUserCharacter struct {

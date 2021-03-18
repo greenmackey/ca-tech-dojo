@@ -1,24 +1,22 @@
 package main
 
 import (
-	"database/sql"
-	"fmt"
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
-	"log"
-	"os"
+  "log"
+	"ca-tech-dojo/db"
+	"ca-tech-dojo/server"
+	"net/http"
 )
 
-var db *sql.DB
-var err error
+// var db *sql.DB
+// var err error
 
 func main() {
 	// .envファイルから環境変数を設定
 	godotenv.Load()
 
-	// DBに接続
-	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s)/%s", os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_ADDRESS"), os.Getenv("DB_NAME"))
-	db, err = sql.Open("mysql", dataSourceName)
+	// // DBに接続
+	err := db.InitDB()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -27,5 +25,10 @@ func main() {
 	initLog()
 
 	// ルーティングとサーバの起動
-	initServer()
+	http.HandleFunc("/user/create", server.CreateUser)
+	http.HandleFunc("/user/get", server.GetUser)
+	http.HandleFunc("/user/update", server.UpdateUser)
+	http.HandleFunc("/gacha/draw", server.DrawGacha)
+	http.HandleFunc("/character/list", server.ListCharacters)
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
