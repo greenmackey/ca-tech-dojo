@@ -41,7 +41,7 @@ func NewGacha() (Gacha, error) {
 }
 
 // ガチャを引く回数に対して，ガチャの結果を返す
-func (g Gacha) Draw(n int) []*character.Character {
+func (g Gacha) Draw(n uint) []*character.Character {
 	var chars []*character.Character
 	rand.Seed(time.Now().UnixNano())
 	for ; n > 0; n-- {

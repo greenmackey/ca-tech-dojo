@@ -40,7 +40,11 @@ func Update(token, name string) error {
 	return nil
 }
 
-func DrawGacha(token string, times int) ([]*character.Character, error) {
+func DrawGacha(token string, times uint) ([]*character.Character, error) {
+	if times <= 0 {
+		return []*character.Character{}, nil
+	}
+
 	var chars []*character.Character
 	// ガチャを引く
 	g, err := gacha.NewGacha()
@@ -54,7 +58,7 @@ func DrawGacha(token string, times int) ([]*character.Character, error) {
 	partialfq := "INSERT INTO rel_user_character (user_token, character_id) VALUES "
 	var placeholders []string
 	var insert []interface{}
-	for i := 0; i < times; i++ {
+	for i := uint(0); i < times; i++ {
 		placeholders = append(placeholders, "(%v, %v)")
 		insert = append(insert, token, chars[i].Id)
 	}

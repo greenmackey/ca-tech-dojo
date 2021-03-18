@@ -30,7 +30,7 @@ func DrawGacha(w http.ResponseWriter, r *http.Request) {
 
 	// リクエストbodyの内容取得
 	// ガチャ回数を受け取る
-	var b struct{ Times int }
+	var b struct{ Times uint }
 	dc := json.NewDecoder(r.Body)
 	err := dc.Decode(&b)
 	if err != nil {
