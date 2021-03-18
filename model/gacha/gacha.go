@@ -8,7 +8,6 @@ import (
 )
 
 
-
 // Gachaを生成
 // キャラクターのリストとその出現確率の累積値を管理するregionを格納
 func NewGacha() (Gacha, error) {
