@@ -15,8 +15,12 @@ services:
       context: .
     command: bash -c "while sleep 1000; do :; done"
     restart: always
+    ports:
+      - "8080:8080"
     volumes:
       - .:/ca-tech-dojo
+      - ./.ssh:/root/.ssh
+    working_dir: /ca-tech-dojo
 volumes:
   ca-tech-dojo-db:
     external: true

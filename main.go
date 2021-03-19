@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/joho/godotenv"
-	"github.com/gorilla/mux"
-  "log"
 	"ca-tech-dojo/db"
 	"ca-tech-dojo/server"
+	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
+	"log"
 	"net/http"
 )
 

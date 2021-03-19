@@ -3,20 +3,22 @@ package gacha
 import (
 	"ca-tech-dojo/db"
 	"ca-tech-dojo/model/character"
+	"log"
 	"math/rand"
 	"time"
 )
-
 
 // Gachaを生成
 // キャラクターのリストとその出現確率の累積値を管理するregionを格納
 func NewGacha() (Gacha, error) {
 	var gacha Gacha
 
-	rows, err := db.DB.Query("select id, name, likelihood from characters order by id asc")
+	q := "SELECT id, name, likelihood FROM characters ORDER BY id ASC"
+	rows, err := db.DB.Query(q)
 	if err != nil {
 		return Gacha{}, err
 	}
+	log.Print(q)
 
 	var total float64
 

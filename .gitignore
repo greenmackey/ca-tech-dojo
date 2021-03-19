@@ -1,4 +1,5 @@
 sample
 .env
 .ssh
+.idea
 *.txt

@@ -1,13 +1,12 @@
 package server
 
 import (
-	"net/http"
-	"encoding/json"
-	"ca-tech-dojo/model/user"
 	"ca-tech-dojo/model/character"
+	"ca-tech-dojo/model/user"
+	"encoding/json"
 	"log"
+	"net/http"
 )
-
 
 func DrawGacha(w http.ResponseWriter, r *http.Request) {
 	// CORS対応

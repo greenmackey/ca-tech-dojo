@@ -1,11 +1,11 @@
 package server
 
 import (
-	"github.com/google/uuid"
-	"net/http"
-	"encoding/json"
-	"log"
 	"ca-tech-dojo/model/user"
+	"encoding/json"
+	"github.com/google/uuid"
+	"log"
+	"net/http"
 	"strings"
 )
 

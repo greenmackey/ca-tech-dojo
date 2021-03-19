@@ -2,12 +2,12 @@ package user
 
 import (
 	"ca-tech-dojo/db"
-	"ca-tech-dojo/model/gacha"
 	"ca-tech-dojo/model/character"
+	"ca-tech-dojo/model/gacha"
+	"database/sql"
 	"fmt"
 	"log"
 	"strings"
-	"database/sql"
 )
 
 const secret = "***"
@@ -70,7 +70,6 @@ func DrawGacha(token string, times uint) ([]*character.Character, error) {
 	return chars, nil
 }
 
-
 func RelCharacters(token string) ([]RelUserCharacter, error) {
 	fq := `SELECT r.id, chars.id, chars.name FROM rel_user_character AS r
 	INNER JOIN characters AS chars
@@ -94,14 +93,6 @@ func RelCharacters(token string) ([]RelUserCharacter, error) {
 	return rels, nil
 }
 
-
-
-
-
-
-
-
-
 func VerifyToken(token string) error {
 	fq := "SELECT id FROM users WHERE token = %v"
 	if err := db.DB.QueryRow(strings.Replace(fq, "%v", "?", -1), token).Scan(0); err == sql.ErrNoRows {
@@ -110,4 +101,3 @@ func VerifyToken(token string) error {
 	log.Print(fmt.Sprintf(fq, secret))
 	return nil
 }
-

@@ -35,4 +35,3 @@ func CORSOrigin(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 }
-

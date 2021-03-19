@@ -1,10 +1,10 @@
 package server
 
 import (
-	"net/http"
 	"ca-tech-dojo/model/user"
-	"log"
 	"encoding/json"
+	"log"
+	"net/http"
 )
 
 func ListCharacters(w http.ResponseWriter, r *http.Request) {
