@@ -3,3 +3,4 @@ sample
 .ssh
 .idea
 *.txt
+go.sum

@@ -2,11 +2,11 @@ package user
 
 import (
 	"ca-tech-dojo/db"
+	"ca-tech-dojo/log"
 	"ca-tech-dojo/model/character"
 	"ca-tech-dojo/model/gacha"
 	"database/sql"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -19,7 +19,7 @@ func Create(token, name string) error {
 	if _, err := db.DB.Exec(fmt.Sprintf(fq, "?", "?"), token, name); err != nil {
 		return errors.Wrapf(err, "query failed in %s", "Create")
 	}
-	log.Print(fmt.Sprintf(fq, secret, name))
+	log.Logger.Info(fmt.Sprintf(fq, secret, name))
 	return nil
 }
 
@@ -29,7 +29,7 @@ func Get(token string) (User, error) {
 	if err := db.DB.QueryRow(strings.Replace(fq, "%v", "?", -1), token).Scan(&user.Name); err != nil {
 		return user, errors.Wrapf(err, "query failed in %s", "Get")
 	}
-	log.Print(fmt.Sprintf(fq, secret))
+	log.Logger.Info(fmt.Sprintf(fq, secret))
 	return user, nil
 }
 
@@ -38,7 +38,7 @@ func Update(token, name string) error {
 	if _, err := db.DB.Exec(strings.Replace(fq, "%v", "?", -1), name, token); err != nil {
 		return errors.Wrapf(err, "query failed in %s", "Update")
 	}
-	log.Print(fmt.Sprintf(fq, name, secret))
+	log.Logger.Info(fmt.Sprintf(fq, name, secret))
 	return nil
 }
 
@@ -68,7 +68,7 @@ func DrawGacha(token string, times uint) ([]*character.Character, error) {
 	if _, err := db.DB.Exec(strings.Replace(fq, "%v", "?", -1), insert...); err != nil {
 		return []*character.Character{}, errors.Wrapf(err, "query failed in %s", "DrawGacha")
 	}
-	log.Print(strings.Replace(fmt.Sprintf(fq, insert...), token, secret, -1))
+	log.Logger.Info(strings.Replace(fmt.Sprintf(fq, insert...), token, secret, -1))
 	return chars, nil
 }
 
@@ -78,7 +78,7 @@ func RelCharacters(token string) ([]RelUserCharacter, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "query failed in %s", "RelCharacters")
 	}
-	log.Print(fmt.Sprintf(fq, secret))
+	log.Logger.Info(fmt.Sprintf(fq, secret))
 
 	var rels []RelUserCharacter
 
@@ -98,6 +98,6 @@ func VerifyToken(token string) error {
 	if err := db.DB.QueryRow(strings.Replace(fq, "%v", "?", -1), token).Scan(0); err == sql.ErrNoRows {
 		return errors.Wrapf(err, "query failed in %s", "VerifyToken")
 	}
-	log.Print(fmt.Sprintf(fq, secret))
+	log.Logger.Info(fmt.Sprintf(fq, secret))
 	return nil
 }

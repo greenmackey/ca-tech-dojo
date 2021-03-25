@@ -8,4 +8,5 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/joho/godotenv v1.3.0
 	github.com/pkg/errors v0.9.1
+	go.uber.org/zap v1.16.0
 )

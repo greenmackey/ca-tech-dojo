@@ -2,8 +2,8 @@ package gacha
 
 import (
 	"ca-tech-dojo/db"
+	"ca-tech-dojo/log"
 	"ca-tech-dojo/model/character"
-	"log"
 	"math/rand"
 	"time"
 
@@ -20,7 +20,7 @@ func NewGacha() (Gacha, error) {
 	if err != nil {
 		return Gacha{}, errors.Wrapf(err, "query failed in %s", "NewGacha")
 	}
-	log.Print(q)
+	log.Logger.Info(q)
 
 	var total float64
 

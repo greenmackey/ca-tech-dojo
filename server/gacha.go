@@ -1,10 +1,10 @@
 package server
 
 import (
+	"ca-tech-dojo/log"
 	"ca-tech-dojo/model/character"
 	"ca-tech-dojo/model/user"
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -42,7 +42,7 @@ func DrawGacha(w http.ResponseWriter, r *http.Request) {
 	// ガチャを引く
 	chars, err := user.DrawGacha(token, uint(b.Times))
 	if err != nil {
-		log.Print(errors.Wrapf(err, "cannot draw gacha in %s", "DrawGacha"))
+		log.Logger.Error(errors.Wrapf(err, "cannot draw gacha in %s", "DrawGacha"))
 		http.Error(w, internalErrMsg, http.StatusInternalServerError)
 	}
 
@@ -54,7 +54,7 @@ func DrawGacha(w http.ResponseWriter, r *http.Request) {
 	resp.Characters = chars
 	ec := json.NewEncoder(w)
 	if err := ec.Encode(resp); err != nil {
-		log.Print(errors.Wrapf(err, encodingErrMsg, "DrawGacha"))
+		log.Logger.Error(errors.Wrapf(err, encodingErrMsg, "DrawGacha"))
 		http.Error(w, internalErrMsg, http.StatusInternalServerError)
 		return
 	}

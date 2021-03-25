@@ -1,0 +1,20 @@
+{
+  "level": "info",
+  "encoding": "console",
+  "encoderConfig": {
+    "messageKey": "Msg",
+    "levelKey": "Level",
+    "timeKey": "Time",
+    "callerKey": "Caller",
+    "stacktraceKey": "St",
+    "levelEncoder": "capital",
+    "timeEncoder": "iso8601",
+    "callerEncoder": "full"
+  },
+  "outputPaths": [
+    "stdout"
+  ],
+  "errorOutputPaths": [
+    "stdout"
+  ]
+}
