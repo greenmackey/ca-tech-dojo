@@ -26,7 +26,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	var u user.User
 	dc := json.NewDecoder(r.Body)
 	err := dc.Decode(&u)
-	if err != nil {
+	if err != nil || u.Name == "" {
 		http.Error(w, invalidBodyMsg, http.StatusBadRequest)
 		return
 	}
@@ -112,7 +112,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	var u user.User
 	dc := json.NewDecoder(r.Body)
 	err := dc.Decode(&u)
-	if err != nil {
+	if err != nil || u.Name == "" {
 		http.Error(w, invalidBodyMsg, http.StatusBadRequest)
 		return
 	}

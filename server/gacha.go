@@ -31,16 +31,16 @@ func DrawGacha(w http.ResponseWriter, r *http.Request) {
 
 	// リクエストbodyの内容取得
 	// ガチャ回数を受け取る
-	var b struct{ Times uint }
+	b := struct{ Times int }{Times: -1}
 	dc := json.NewDecoder(r.Body)
 	err := dc.Decode(&b)
-	if err != nil {
+	if err != nil || b.Times < 0 {
 		http.Error(w, invalidBodyMsg, http.StatusBadRequest)
 		return
 	}
 
 	// ガチャを引く
-	chars, err := user.DrawGacha(token, b.Times)
+	chars, err := user.DrawGacha(token, uint(b.Times))
 	if err != nil {
 		log.Print(errors.Wrapf(err, "cannot draw gacha in %s", "DrawGacha"))
 		http.Error(w, internalErrMsg, http.StatusInternalServerError)
