@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+
+	"github.com/pkg/errors"
 )
 
 func DrawGacha(w http.ResponseWriter, r *http.Request) {
@@ -33,7 +35,6 @@ func DrawGacha(w http.ResponseWriter, r *http.Request) {
 	dc := json.NewDecoder(r.Body)
 	err := dc.Decode(&b)
 	if err != nil {
-		log.Print(err)
 		http.Error(w, invalidBodyMsg, http.StatusBadRequest)
 		return
 	}
@@ -41,7 +42,7 @@ func DrawGacha(w http.ResponseWriter, r *http.Request) {
 	// ガチャを引く
 	chars, err := user.DrawGacha(token, b.Times)
 	if err != nil {
-		log.Print(err)
+		log.Print(errors.Wrapf(err, "cannot draw gacha in %s", "DrawGacha"))
 		http.Error(w, internalErrMsg, http.StatusInternalServerError)
 	}
 
@@ -53,7 +54,7 @@ func DrawGacha(w http.ResponseWriter, r *http.Request) {
 	resp.Characters = chars
 	ec := json.NewEncoder(w)
 	if err := ec.Encode(resp); err != nil {
-		log.Print(err)
+		log.Print(errors.Wrapf(err, encodingErrMsg, "DrawGacha"))
 		http.Error(w, internalErrMsg, http.StatusInternalServerError)
 		return
 	}

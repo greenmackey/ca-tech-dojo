@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+
+	"github.com/pkg/errors"
 )
 
 func ListCharacters(w http.ResponseWriter, r *http.Request) {
@@ -29,7 +31,7 @@ func ListCharacters(w http.ResponseWriter, r *http.Request) {
 	// DBからユーザのガチャ結果を取得
 	rels, err := user.RelCharacters(token)
 	if err != nil {
-		log.Print(err)
+		log.Print(errors.Wrapf(err, "cannot get relcharacters in %s", "ListCharacters"))
 		http.Error(w, invalidTokenMsg, http.StatusBadRequest)
 		return
 	}
@@ -42,7 +44,7 @@ func ListCharacters(w http.ResponseWriter, r *http.Request) {
 	resp.RelsUserCharacter = rels
 	ec := json.NewEncoder(w)
 	if err := ec.Encode(resp); err != nil {
-		log.Print(err)
+		log.Print(errors.Wrapf(err, encodingErrMsg, "ListCharacters"))
 		http.Error(w, internalErrMsg, http.StatusInternalServerError)
 		return
 	}

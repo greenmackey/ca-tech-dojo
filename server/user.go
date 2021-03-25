@@ -3,10 +3,12 @@ package server
 import (
 	"ca-tech-dojo/model/user"
 	"encoding/json"
-	"github.com/google/uuid"
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/google/uuid"
+	"github.com/pkg/errors"
 )
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
@@ -25,7 +27,6 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	dc := json.NewDecoder(r.Body)
 	err := dc.Decode(&u)
 	if err != nil {
-		log.Print(err)
 		http.Error(w, invalidBodyMsg, http.StatusBadRequest)
 		return
 	}
@@ -36,7 +37,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	// DBに追加
 	err = user.Create(token, u.Name)
 	if err != nil {
-		log.Print(err)
+		log.Print(errors.Wrapf(err, "cannot create user in %s", "CreateUser"))
 		http.Error(w, internalErrMsg, http.StatusInternalServerError)
 		return
 	}
@@ -49,7 +50,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	resp.Token = token
 	ec := json.NewEncoder(w)
 	if err := ec.Encode(resp); err != nil {
-		log.Print(err)
+		log.Print(errors.Wrapf(err, encodingErrMsg, "CreateUser"))
 		http.Error(w, internalErrMsg, http.StatusInternalServerError)
 		return
 	}
@@ -71,7 +72,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	// DBからユーザ情報取得
 	u, err := user.Get(token)
 	if err != nil {
-		log.Print(err)
+		log.Print(errors.Wrapf(err, "cannot get user in %s", "GetUser"))
 		http.Error(w, invalidTokenMsg, http.StatusBadRequest)
 		return
 	}
@@ -81,7 +82,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	ec := json.NewEncoder(w)
 	err = ec.Encode(u)
 	if err != nil {
-		log.Print(err)
+		log.Print(errors.Wrapf(err, encodingErrMsg, "GetUser"))
 		http.Error(w, internalErrMsg, http.StatusInternalServerError)
 		return
 	}
@@ -112,7 +113,6 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	dc := json.NewDecoder(r.Body)
 	err := dc.Decode(&u)
 	if err != nil {
-		log.Print(err)
 		http.Error(w, invalidBodyMsg, http.StatusBadRequest)
 		return
 	}
@@ -120,7 +120,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	// DB更新
 	// ユーザの名前を更新
 	if err := user.Update(token, u.Name); err != nil {
-		log.Print(err)
-		http.Error(w, invalidTokenMsg, http.StatusBadRequest)
+		log.Print(errors.Wrapf(err, "cannot update user name in %s", "UpdateUser"))
+		http.Error(w, internalErrMsg, http.StatusInternalServerError)
 	}
 }

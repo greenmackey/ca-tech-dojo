@@ -3,27 +3,26 @@ package main
 import (
 	"ca-tech-dojo/db"
 	"ca-tech-dojo/server"
-	"github.com/gorilla/mux"
-	"github.com/joho/godotenv"
 	"log"
 	"net/http"
-)
 
-// var db *sql.DB
-// var err error
+	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
+)
 
 func main() {
 	// .envファイルから環境変数を設定
 	godotenv.Load()
 
-	// // DBに接続
-	err := db.InitDB()
-	if err != nil {
+	// ログの設定
+	if err := initLog(); err != nil {
 		log.Fatal(err)
 	}
 
-	// ログの設定
-	initLog()
+	// // DBに接続
+	if err := db.InitDB(); err != nil {
+		log.Fatal(err)
+	}
 
 	// ルーティングとサーバの起動
 	r := mux.NewRouter()

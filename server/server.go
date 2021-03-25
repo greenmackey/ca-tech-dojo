@@ -9,6 +9,7 @@ import (
 const invalidTokenMsg = "Token is invalid."
 const invalidBodyMsg = "Request body is invalid."
 const internalErrMsg = "Internal Server Error."
+const encodingErrMsg = "cannot encode response in %s"
 
 // トークンの取得
 func getToken(r *http.Request) string {

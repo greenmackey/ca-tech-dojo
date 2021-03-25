@@ -6,6 +6,8 @@ import (
 	"log"
 	"math/rand"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 // Gachaを生成
@@ -16,7 +18,7 @@ func NewGacha() (Gacha, error) {
 	q := "SELECT id, name, likelihood FROM characters ORDER BY id ASC"
 	rows, err := db.DB.Query(q)
 	if err != nil {
-		return Gacha{}, err
+		return Gacha{}, errors.Wrapf(err, "query failed in %s", "NewGacha")
 	}
 	log.Print(q)
 
@@ -26,7 +28,7 @@ func NewGacha() (Gacha, error) {
 		var c character.Character
 		err := rows.Scan(&c.Id, &c.Name, &c.Likelihood)
 		if err != nil {
-			return Gacha{}, err
+			return Gacha{}, errors.Wrapf(err, "scan failed in %s", "NewGacha")
 		}
 		gacha.characters = append(gacha.characters, &c)
 		total += c.Likelihood
