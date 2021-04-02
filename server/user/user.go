@@ -1,8 +1,9 @@
-package server
+package user
 
 import (
 	"ca-tech-dojo/log"
 	"ca-tech-dojo/model/user"
+	"ca-tech-dojo/server"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -13,11 +14,11 @@ import (
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	// CORS対応
-	CORSOrigin(w, r)
+	server.CORSOrigin(w, r)
 
 	// CORS preflight requestをさばく
 	if r.Method == "OPTIONS" {
-		CORSHeader(w)
+		server.CORSHeader(w)
 		return
 	}
 
@@ -27,7 +28,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	dc := json.NewDecoder(r.Body)
 	err := dc.Decode(&u)
 	if err != nil || u.Name == "" {
-		http.Error(w, invalidBodyMsg, http.StatusBadRequest)
+		http.Error(w, server.InvalidBodyMsg, http.StatusBadRequest)
 		return
 	}
 
@@ -37,8 +38,8 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	// DBに追加
 	err = user.Create(token, u.Name)
 	if err != nil {
-		log.Logger.Error(errors.Wrapf(err, "cannot create user in %s", "CreateUser"))
-		http.Error(w, internalErrMsg, http.StatusInternalServerError)
+		log.Logger.Error(errors.Wrap(err, "user.Create failed"))
+		http.Error(w, server.InternalErrMsg, http.StatusInternalServerError)
 		return
 	}
 
@@ -50,30 +51,29 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	resp.Token = token
 	ec := json.NewEncoder(w)
 	if err := ec.Encode(resp); err != nil {
-		log.Logger.Error(errors.Wrapf(err, encodingErrMsg, "CreateUser"))
-		http.Error(w, internalErrMsg, http.StatusInternalServerError)
+		log.Logger.Error(errors.Wrap(err, "ec.Encode failed"))
+		http.Error(w, server.InternalErrMsg, http.StatusInternalServerError)
 		return
 	}
 }
 
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	// CORS対応
-	CORSOrigin(w, r)
+	server.CORSOrigin(w, r)
 
 	// CORS preflight requestをさばく
 	if r.Method == "OPTIONS" {
-		CORSHeader(w)
+		server.CORSHeader(w)
 		return
 	}
 
 	// トークン取得
-	token := getToken(r)
+	token := server.GetToken(r)
 
 	// DBからユーザ情報取得
 	u, err := user.Get(token)
 	if err != nil {
-		//log.Logger.Error(errors.Wrapf(err, "cannot get user in %s", "GetUser"))
-		http.Error(w, invalidTokenMsg, http.StatusBadRequest)
+		http.Error(w, server.InvalidTokenMsg, http.StatusBadRequest)
 		return
 	}
 
@@ -82,28 +82,28 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	ec := json.NewEncoder(w)
 	err = ec.Encode(u)
 	if err != nil {
-		log.Logger.Error(errors.Wrapf(err, encodingErrMsg, "GetUser"))
-		http.Error(w, internalErrMsg, http.StatusInternalServerError)
+		log.Logger.Error(errors.Wrap(err, "ec.Encode failed"))
+		http.Error(w, server.InternalErrMsg, http.StatusInternalServerError)
 		return
 	}
 }
 
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	// CORS対応
-	CORSOrigin(w, r)
+	server.CORSOrigin(w, r)
 
 	// CORS preflight requestをさばく
 	if r.Method == "OPTIONS" {
-		CORSHeader(w)
+		server.CORSHeader(w)
 		return
 	}
 
 	// トークンの取得
-	token := getToken(r)
+	token := server.GetToken(r)
 
 	// 該当するユーザの存在確認
 	if err := user.VerifyToken(token); err != nil {
-		http.Error(w, invalidTokenMsg, http.StatusBadRequest)
+		http.Error(w, server.InvalidTokenMsg, http.StatusBadRequest)
 		return
 	}
 
@@ -113,14 +113,14 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	dc := json.NewDecoder(r.Body)
 	err := dc.Decode(&u)
 	if err != nil || u.Name == "" {
-		http.Error(w, invalidBodyMsg, http.StatusBadRequest)
+		http.Error(w, server.InvalidBodyMsg, http.StatusBadRequest)
 		return
 	}
 
 	// DB更新
 	// ユーザの名前を更新
 	if err := user.Update(token, u.Name); err != nil {
-		log.Logger.Error(errors.Wrapf(err, "cannot update user name in %s", "UpdateUser"))
-		http.Error(w, internalErrMsg, http.StatusInternalServerError)
+		log.Logger.Error(errors.Wrap(err, "user.Update failed"))
+		http.Error(w, server.InternalErrMsg, http.StatusInternalServerError)
 	}
 }

@@ -6,13 +6,13 @@ import (
 	"strings"
 )
 
-const invalidTokenMsg = "Token is invalid."
-const invalidBodyMsg = "Request body is invalid."
-const internalErrMsg = "Internal Server Error."
-const encodingErrMsg = "cannot encode response in %s"
+const InvalidTokenMsg = "Token is invalid."
+const InvalidBodyMsg = "Request body is invalid."
+const InternalErrMsg = "Internal Server Error."
+const EncodingErrMsg = "cannot encode response in %s"
 
 // トークンの取得
-func getToken(r *http.Request) string {
+func GetToken(r *http.Request) string {
 	token := r.Header.Get("X-Token")
 	return token
 }

@@ -1,9 +1,10 @@
-package server
+package gacha
 
 import (
 	"ca-tech-dojo/log"
 	"ca-tech-dojo/model/character"
 	"ca-tech-dojo/model/user"
+	"ca-tech-dojo/server"
 	"encoding/json"
 	"net/http"
 
@@ -12,20 +13,20 @@ import (
 
 func DrawGacha(w http.ResponseWriter, r *http.Request) {
 	// CORS対応
-	CORSOrigin(w, r)
+	server.CORSOrigin(w, r)
 
 	// CORS preflight requestをさばく
 	if r.Method == "OPTIONS" {
-		CORSHeader(w)
+		server.CORSHeader(w)
 		return
 	}
 
 	// トークンの取得
-	token := getToken(r)
+	token := server.GetToken(r)
 
 	// 該当するユーザの存在確認
 	if err := user.VerifyToken(token); err != nil {
-		http.Error(w, invalidTokenMsg, http.StatusBadRequest)
+		http.Error(w, server.InvalidTokenMsg, http.StatusBadRequest)
 		return
 	}
 
@@ -35,15 +36,15 @@ func DrawGacha(w http.ResponseWriter, r *http.Request) {
 	dc := json.NewDecoder(r.Body)
 	err := dc.Decode(&b)
 	if err != nil || b.Times < 0 {
-		http.Error(w, invalidBodyMsg, http.StatusBadRequest)
+		http.Error(w, server.InvalidBodyMsg, http.StatusBadRequest)
 		return
 	}
 
 	// ガチャを引く
 	chars, err := user.DrawGacha(token, uint(b.Times))
 	if err != nil {
-		log.Logger.Error(errors.Wrapf(err, "cannot draw gacha in %s", "DrawGacha"))
-		http.Error(w, internalErrMsg, http.StatusInternalServerError)
+		log.Logger.Error(errors.Wrap(err, "user.DrawGacha failed"))
+		http.Error(w, server.InternalErrMsg, http.StatusInternalServerError)
 	}
 
 	// レスボンスbodyの作成
@@ -54,8 +55,8 @@ func DrawGacha(w http.ResponseWriter, r *http.Request) {
 	resp.Characters = chars
 	ec := json.NewEncoder(w)
 	if err := ec.Encode(resp); err != nil {
-		log.Logger.Error(errors.Wrapf(err, encodingErrMsg, "DrawGacha"))
-		http.Error(w, internalErrMsg, http.StatusInternalServerError)
+		log.Logger.Error(errors.Wrap(err, "ec.Encode failed"))
+		http.Error(w, server.InternalErrMsg, http.StatusInternalServerError)
 		return
 	}
 }
