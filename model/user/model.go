@@ -6,7 +6,6 @@ import (
 	"ca-tech-dojo/model/character"
 	"ca-tech-dojo/model/gacha"
 	"database/sql"
-	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -15,30 +14,30 @@ import (
 const secret = "***"
 
 func Create(token, name string) error {
-	fq := "INSERT INTO users (token, name) VALUES ( %v, %v )"
-	if _, err := db.DB.Exec(fmt.Sprintf(fq, "?", "?"), token, name); err != nil {
-		return errors.Wrapf(err, "query failed in %s", "Create")
+	q := "INSERT INTO users (token, name) VALUES ( ?, ? )"
+	if _, err := db.DB.Exec(q, token, name); err != nil {
+		return errors.Wrap(err, "Insert query failed")
 	}
-	log.Logger.Info(fmt.Sprintf(fq, secret, name))
+	log.Logger.Info("Create a user")
 	return nil
 }
 
 func Get(token string) (User, error) {
 	var user User
-	fq := "SELECT name FROM users WHERE token = %v"
-	if err := db.DB.QueryRow(strings.Replace(fq, "%v", "?", -1), token).Scan(&user.Name); err != nil {
-		return user, errors.Wrapf(err, "query failed in %s", "Get")
+	q := "SELECT name FROM users WHERE token = ?"
+	if err := db.DB.QueryRow(q, token).Scan(&user.Name); err != nil {
+		return user, errors.Wrap(err, "Select query failed")
 	}
-	log.Logger.Info(fmt.Sprintf(fq, secret))
+	log.Logger.Info("Get a user")
 	return user, nil
 }
 
 func Update(token, name string) error {
-	fq := "UPDATE users SET name=%v WHERE token=%v"
-	if _, err := db.DB.Exec(strings.Replace(fq, "%v", "?", -1), name, token); err != nil {
-		return errors.Wrapf(err, "query failed in %s", "Update")
+	q := "UPDATE users SET name=? WHERE token=?"
+	if _, err := db.DB.Exec(q, name, token); err != nil {
+		return errors.Wrap(err, "Update query failed")
 	}
-	log.Logger.Info(fmt.Sprintf(fq, name, secret))
+	log.Logger.Info("Update a user")
 	return nil
 }
 
@@ -51,34 +50,34 @@ func DrawGacha(token string, times uint) ([]*character.Character, error) {
 	// ガチャを引く
 	g, err := gacha.NewGacha()
 	if err != nil {
-		return chars, errors.Wrapf(err, "cannot get new gacha in %s", "DrawGacha")
+		return chars, errors.Wrap(err, "gacha.NewGacha() failed")
 	}
 
 	chars = g.Draw(times)
 
 	// DBにガチャの結果を反映
-	partialfq := "INSERT INTO rel_user_character (user_token, character_id) VALUES "
+	partialq := "INSERT INTO rel_user_character (user_token, character_id) VALUES "
 	var placeholders []string
 	var insert []interface{}
 	for i := uint(0); i < times; i++ {
-		placeholders = append(placeholders, "(%v, %v)")
+		placeholders = append(placeholders, "(?, ?)")
 		insert = append(insert, token, chars[i].Id)
 	}
-	fq := partialfq + strings.Join(placeholders, ", ")
-	if _, err := db.DB.Exec(strings.Replace(fq, "%v", "?", -1), insert...); err != nil {
-		return []*character.Character{}, errors.Wrapf(err, "query failed in %s", "DrawGacha")
+	q := partialq + strings.Join(placeholders, ", ")
+	if _, err := db.DB.Exec(q, insert...); err != nil {
+		return []*character.Character{}, errors.Wrap(err, "Insert query failed")
 	}
-	log.Logger.Info(strings.Replace(fmt.Sprintf(fq, insert...), token, secret, -1))
+	log.Logger.Info("Save gacha results")
 	return chars, nil
 }
 
 func RelCharacters(token string) ([]RelUserCharacter, error) {
-	fq := `SELECT r.id, chars.id, chars.name FROM rel_user_character AS r INNER JOIN characters AS chars ON r.character_id = chars.id AND r.user_token = %v`
-	rows, err := db.DB.Query(strings.Replace(fq, "%v", "?", -1), token)
+	q := `SELECT r.id, chars.id, chars.name FROM rel_user_character AS r INNER JOIN characters AS chars ON r.character_id = chars.id AND r.user_token = ?`
+	rows, err := db.DB.Query(q, token)
 	if err != nil {
-		return nil, errors.Wrapf(err, "query failed in %s", "RelCharacters")
+		return nil, errors.Wrap(err, "Select query failed")
 	}
-	log.Logger.Info(fmt.Sprintf(fq, secret))
+	log.Logger.Info("Get gacha results")
 
 	var rels []RelUserCharacter
 
@@ -86,7 +85,7 @@ func RelCharacters(token string) ([]RelUserCharacter, error) {
 	for rows.Next() {
 		var rel RelUserCharacter
 		if err := rows.Scan(&rel.Id, &rel.CharacterId, &rel.CharacterName); err != nil {
-			return nil, errors.Wrapf(err, "query failed in %s", "RelCharacters")
+			return nil, errors.Wrap(err, "rows.Scan failed")
 		}
 		rels = append(rels, rel)
 	}
@@ -94,10 +93,10 @@ func RelCharacters(token string) ([]RelUserCharacter, error) {
 }
 
 func VerifyToken(token string) error {
-	fq := "SELECT id FROM users WHERE token = %v"
-	if err := db.DB.QueryRow(strings.Replace(fq, "%v", "?", -1), token).Scan(0); err == sql.ErrNoRows {
-		return errors.Wrapf(err, "query failed in %s", "VerifyToken")
+	q := "SELECT id FROM users WHERE token = ?"
+	if err := db.DB.QueryRow(q, token).Scan(0); err == sql.ErrNoRows {
+		return errors.Wrap(err, "Select query failed")
 	}
-	log.Logger.Info(fmt.Sprintf(fq, secret))
+	log.Logger.Info("Verify token")
 	return nil
 }

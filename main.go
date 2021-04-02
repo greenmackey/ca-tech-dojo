@@ -23,7 +23,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// // DBに接続
+	// DBに接続
 	if err := db.InitDB(); err != nil {
 		log.Logger.Fatal(err)
 	}

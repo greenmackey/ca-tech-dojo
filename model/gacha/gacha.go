@@ -18,9 +18,9 @@ func NewGacha() (Gacha, error) {
 	q := "SELECT id, name, likelihood FROM characters ORDER BY id ASC"
 	rows, err := db.DB.Query(q)
 	if err != nil {
-		return Gacha{}, errors.Wrapf(err, "query failed in %s", "NewGacha")
+		return Gacha{}, errors.Wrap(err, "Select query failed")
 	}
-	log.Logger.Info(q)
+	log.Logger.Info("Get characters info for creating a gacha")
 
 	var total float64
 
@@ -28,7 +28,7 @@ func NewGacha() (Gacha, error) {
 		var c character.Character
 		err := rows.Scan(&c.Id, &c.Name, &c.Likelihood)
 		if err != nil {
-			return Gacha{}, errors.Wrapf(err, "scan failed in %s", "NewGacha")
+			return Gacha{}, errors.Wrap(err, "rows.Scan failed")
 		}
 		gacha.characters = append(gacha.characters, &c)
 		total += c.Likelihood
