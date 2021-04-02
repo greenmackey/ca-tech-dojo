@@ -11,8 +11,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const secret = "***"
-
 func Create(token, name string) error {
 	q := "INSERT INTO users (token, name) VALUES ( ?, ? )"
 	if _, err := db.DB.Exec(q, token, name); err != nil {
@@ -46,14 +44,14 @@ func DrawGacha(token string, times uint) ([]*character.Character, error) {
 		return []*character.Character{}, nil
 	}
 
-	var chars []*character.Character
+	var characters []*character.Character
 	// ガチャを引く
 	g, err := gacha.NewGacha()
 	if err != nil {
-		return chars, errors.Wrap(err, "gacha.NewGacha() failed")
+		return characters, errors.Wrap(err, "gacha.NewGacha() failed")
 	}
 
-	chars = g.Draw(times)
+	characters = g.Draw(times)
 
 	// DBにガチャの結果を反映
 	partialq := "INSERT INTO rel_user_character (user_token, character_id) VALUES "
@@ -61,18 +59,18 @@ func DrawGacha(token string, times uint) ([]*character.Character, error) {
 	var insert []interface{}
 	for i := uint(0); i < times; i++ {
 		placeholders = append(placeholders, "(?, ?)")
-		insert = append(insert, token, chars[i].Id)
+		insert = append(insert, token, characters[i].Id)
 	}
 	q := partialq + strings.Join(placeholders, ", ")
 	if _, err := db.DB.Exec(q, insert...); err != nil {
 		return []*character.Character{}, errors.Wrap(err, "Insert query failed")
 	}
 	log.Logger.Info("Save gacha results")
-	return chars, nil
+	return characters, nil
 }
 
 func RelCharacters(token string) ([]RelUserCharacter, error) {
-	q := `SELECT r.id, chars.id, chars.name FROM rel_user_character AS r INNER JOIN characters AS chars ON r.character_id = chars.id AND r.user_token = ?`
+	q := "SELECT r.id, chars.id, chars.name FROM rel_user_character AS r INNER JOIN characters AS chars ON r.character_id = chars.id AND r.user_token = ?"
 	rows, err := db.DB.Query(q, token)
 	if err != nil {
 		return nil, errors.Wrap(err, "Select query failed")
