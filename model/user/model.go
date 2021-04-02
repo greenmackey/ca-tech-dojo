@@ -3,9 +3,6 @@ package user
 import (
 	"ca-tech-dojo/db"
 	"ca-tech-dojo/log"
-	"ca-tech-dojo/model/character"
-	"ca-tech-dojo/model/gacha"
-	"ca-tech-dojo/model/reluc"
 	"database/sql"
 
 	"github.com/pkg/errors"
@@ -37,36 +34,6 @@ func Update(token, name string) error {
 	}
 	log.Logger.Info("Update a user")
 	return nil
-}
-
-func DrawGacha(token string, times uint) ([]*character.Character, error) {
-	if times <= 0 {
-		return []*character.Character{}, nil
-	}
-
-	// ガチャを引く
-	g, err := gacha.NewGacha()
-	if err != nil {
-		return nil, errors.Wrap(err, "gacha.NewGacha() failed")
-	}
-
-	characters := g.Draw(times)
-
-	rels := make([]reluc.Relationship, 0, len(characters))
-
-	for _, c := range characters {
-		rel := reluc.Relationship{
-			UserToken:   token,
-			CharacterId: c.Id,
-		}
-		rels = append(rels, rel)
-	}
-
-	if err := reluc.BulkCreate(rels); err != nil {
-		return nil, errors.Wrap(err, "reluc.BulkCreate failed")
-	}
-
-	return characters, nil
 }
 
 func Verify(token string) error {

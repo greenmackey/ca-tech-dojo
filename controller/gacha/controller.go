@@ -8,9 +8,14 @@ import (
 	"github.com/pkg/errors"
 )
 
+type Gacha struct {
+	characters []*character.Character
+	region     []float64
+}
+
 // Gachaを生成
 // キャラクターのリストとその出現確率の累積値を管理するregionを格納
-func NewGacha() (Gacha, error) {
+func New() (Gacha, error) {
 	var gacha Gacha
 	var err error
 
@@ -20,7 +25,6 @@ func NewGacha() (Gacha, error) {
 	}
 
 	var total float64
-
 	for _, c := range gacha.characters {
 		total += c.Likelihood
 	}

@@ -1,6 +1,8 @@
 package gacha
 
 import (
+	"ca-tech-dojo/controller/gacha"
+	"ca-tech-dojo/controller/reluc"
 	"ca-tech-dojo/log"
 	"ca-tech-dojo/model/character"
 	"ca-tech-dojo/model/user"
@@ -40,11 +42,19 @@ func DrawGacha(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ガチャを引く
-	chars, err := user.DrawGacha(token, uint(b.Times))
+	// ガチャを作成
+	g, err := gacha.New()
 	if err != nil {
-		log.Logger.Error(errors.Wrap(err, "user.DrawGacha failed"))
 		http.Error(w, server.InternalErrMsg, http.StatusInternalServerError)
+		log.Logger.Error(errors.Wrap(err, "gacha.New failed"))
+		return
+	}
+	// ガチャ結果を取得，保存
+	characters := g.Draw(uint(b.Times))
+	if err := reluc.SaveCharacters(token, characters); err != nil {
+		http.Error(w, server.InternalErrMsg, http.StatusInternalServerError)
+		log.Logger.Error(errors.Wrap(err, "reluc.SaveCharacters failed"))
+		return
 	}
 
 	// レスボンスbodyの作成
@@ -52,7 +62,7 @@ func DrawGacha(w http.ResponseWriter, r *http.Request) {
 	var resp struct {
 		Characters []*character.Character `json:"results"`
 	}
-	resp.Characters = chars
+	resp.Characters = characters
 	ec := json.NewEncoder(w)
 	if err := ec.Encode(resp); err != nil {
 		log.Logger.Error(errors.Wrap(err, "ec.Encode failed"))
