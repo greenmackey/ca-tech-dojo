@@ -9,6 +9,10 @@ import (
 )
 
 func BulkCreate(rels []Relationship) error {
+	if len(rels) == 0 {
+		return nil
+	}
+
 	partialq := "INSERT INTO rel_user_character (user_token, character_id) VALUES "
 	var placeholders []string
 	var insert []interface{}

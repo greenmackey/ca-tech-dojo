@@ -5,6 +5,7 @@ import (
 	"ca-tech-dojo/controller/reluc"
 	"ca-tech-dojo/log"
 	"ca-tech-dojo/model/character"
+	Reluc "ca-tech-dojo/model/reluc"
 	"ca-tech-dojo/model/user"
 	"ca-tech-dojo/server"
 	"encoding/json"
@@ -51,9 +52,10 @@ func DrawGacha(w http.ResponseWriter, r *http.Request) {
 	}
 	// ガチャ結果を取得，保存
 	characters := g.Draw(uint(b.Times))
-	if err := reluc.SaveCharacters(token, characters); err != nil {
+	rels := reluc.ToRelationship(token, characters)
+	if err := Reluc.BulkCreate(rels); err != nil {
 		http.Error(w, server.InternalErrMsg, http.StatusInternalServerError)
-		log.Logger.Error(errors.Wrap(err, "reluc.SaveCharacters failed"))
+		log.Logger.Error(errors.Wrap(err, "Reluc.BulkCreate failed"))
 		return
 	}
 
