@@ -102,7 +102,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	token := server.GetToken(r)
 
 	// 該当するユーザの存在確認
-	if err := user.VerifyToken(token); err != nil {
+	if err := user.Verify(token); err != nil {
 		http.Error(w, server.InvalidTokenMsg, http.StatusBadRequest)
 		return
 	}

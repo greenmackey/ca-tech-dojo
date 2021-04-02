@@ -5,8 +5,8 @@ import (
 	"ca-tech-dojo/log"
 	"ca-tech-dojo/model/character"
 	"ca-tech-dojo/model/gacha"
+	"ca-tech-dojo/model/reluc"
 	"database/sql"
-	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -44,53 +44,32 @@ func DrawGacha(token string, times uint) ([]*character.Character, error) {
 		return []*character.Character{}, nil
 	}
 
-	var characters []*character.Character
 	// ガチャを引く
 	g, err := gacha.NewGacha()
 	if err != nil {
-		return characters, errors.Wrap(err, "gacha.NewGacha() failed")
+		return nil, errors.Wrap(err, "gacha.NewGacha() failed")
 	}
 
-	characters = g.Draw(times)
+	characters := g.Draw(times)
 
-	// DBにガチャの結果を反映
-	partialq := "INSERT INTO rel_user_character (user_token, character_id) VALUES "
-	var placeholders []string
-	var insert []interface{}
-	for i := uint(0); i < times; i++ {
-		placeholders = append(placeholders, "(?, ?)")
-		insert = append(insert, token, characters[i].Id)
-	}
-	q := partialq + strings.Join(placeholders, ", ")
-	if _, err := db.DB.Exec(q, insert...); err != nil {
-		return []*character.Character{}, errors.Wrap(err, "Insert query failed")
-	}
-	log.Logger.Info("Save gacha results")
-	return characters, nil
-}
+	rels := make([]reluc.Relationship, 0, len(characters))
 
-func RelCharacters(token string) ([]RelUserCharacter, error) {
-	q := "SELECT r.id, chars.id, chars.name FROM rel_user_character AS r INNER JOIN characters AS chars ON r.character_id = chars.id AND r.user_token = ?"
-	rows, err := db.DB.Query(q, token)
-	if err != nil {
-		return nil, errors.Wrap(err, "Select query failed")
-	}
-	log.Logger.Info("Get gacha results")
-
-	var rels []RelUserCharacter
-
-	// ガチャ結果をスライス relsに格納
-	for rows.Next() {
-		var rel RelUserCharacter
-		if err := rows.Scan(&rel.Id, &rel.CharacterId, &rel.CharacterName); err != nil {
-			return nil, errors.Wrap(err, "rows.Scan failed")
+	for _, c := range characters {
+		rel := reluc.Relationship{
+			UserToken:   token,
+			CharacterId: c.Id,
 		}
 		rels = append(rels, rel)
 	}
-	return rels, nil
+
+	if err := reluc.BulkCreate(rels); err != nil {
+		return nil, errors.Wrap(err, "reluc.BulkCreate failed")
+	}
+
+	return characters, nil
 }
 
-func VerifyToken(token string) error {
+func Verify(token string) error {
 	q := "SELECT id FROM users WHERE token = ?"
 	if err := db.DB.QueryRow(q, token).Scan(0); err == sql.ErrNoRows {
 		return errors.Wrap(err, "Select query failed")

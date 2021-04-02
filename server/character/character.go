@@ -2,6 +2,7 @@ package character
 
 import (
 	"ca-tech-dojo/log"
+	"ca-tech-dojo/model/reluc"
 	"ca-tech-dojo/model/user"
 	"ca-tech-dojo/server"
 	"encoding/json"
@@ -24,15 +25,15 @@ func ListCharacters(w http.ResponseWriter, r *http.Request) {
 	token := server.GetToken(r)
 
 	// 該当するユーザの存在確認
-	if err := user.VerifyToken(token); err != nil {
+	if err := user.Verify(token); err != nil {
 		http.Error(w, server.InvalidTokenMsg, http.StatusBadRequest)
 		return
 	}
 
 	// DBからユーザのガチャ結果を取得
-	rels, err := user.RelCharacters(token)
+	rels, err := reluc.Get(token)
 	if err != nil {
-		log.Logger.Error(errors.Wrap(err, "user.RelCharacters failed"))
+		log.Logger.Error(errors.Wrap(err, "reluc.Get failed"))
 		http.Error(w, server.InvalidTokenMsg, http.StatusBadRequest)
 		return
 	}
@@ -40,7 +41,7 @@ func ListCharacters(w http.ResponseWriter, r *http.Request) {
 	// レスポンスbodyの作成
 	// 該当ユーザのガチャ結果を返す
 	var resp struct {
-		RelsUserCharacter []user.RelUserCharacter `json:"characters"`
+		RelsUserCharacter []reluc.Relationship `json:"characters"`
 	}
 	resp.RelsUserCharacter = rels
 	ec := json.NewEncoder(w)
