@@ -1,8 +1,8 @@
 package usercharacter
 
 type Relationship struct {
-	Id            int    `json:"userCharacterID,string"`
-	UserToken     string `json:"-"`
-	CharacterId   int    `json:"characterID,string"`
-	CharacterName string `json:"name"`
+	Id            int
+	UserToken     string
+	CharacterId   int
+	CharacterName string
 }

@@ -34,7 +34,7 @@ func DrawGacha(w http.ResponseWriter, r *http.Request) {
 
 	// リクエストbodyの内容取得
 	// ガチャ回数を受け取る
-	reqBody := DrawGachaRequest{Times: -1}
+	reqBody := drawGachaRequest{Times: -1}
 	dc := json.NewDecoder(r.Body)
 	err := dc.Decode(&reqBody)
 	if err != nil || reqBody.Times < 0 {
@@ -60,7 +60,7 @@ func DrawGacha(w http.ResponseWriter, r *http.Request) {
 
 	// レスボンスbodyの作成
 	// ガチャ結果を返す
-	resp := DrawGachaResponse{Characters: characters}
+	resp := newDrawGachaResponse(characters)
 	ec := json.NewEncoder(w)
 	if err := ec.Encode(resp); err != nil {
 		log.Logger.Error(errors.Wrap(err, "ec.Encode failed"))

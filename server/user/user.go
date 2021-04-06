@@ -68,7 +68,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	token := server.GetToken(r)
 
 	// DBからユーザ情報取得
-	u, err := user.Get(token)
+	userEntity, err := user.Get(token)
 	if err != nil {
 		http.Error(w, server.InvalidTokenMsg, http.StatusBadRequest)
 		return
@@ -76,8 +76,9 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 
 	// レスポンスbodyの作成
 	// ユーザの名前を返す
+	resp := GetUserResponse{Name: userEntity.Name}
 	ec := json.NewEncoder(w)
-	err = ec.Encode(u)
+	err = ec.Encode(resp)
 	if err != nil {
 		log.Logger.Error(errors.Wrap(err, "ec.Encode failed"))
 		http.Error(w, server.InternalErrMsg, http.StatusInternalServerError)

@@ -11,3 +11,7 @@ type CreateUserRequest struct {
 type CreateUserResponse struct {
 	Token string `json:"token"`
 }
+
+type GetUserResponse struct {
+	Name string `json:"name"`
+}

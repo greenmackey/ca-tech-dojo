@@ -40,7 +40,7 @@ func ListCharacters(w http.ResponseWriter, r *http.Request) {
 
 	// レスポンスbodyの作成
 	// 該当ユーザのガチャ結果を返す
-	resp := ListCharactersResponse{UserCharacters: relationships}
+	resp := NewListCharactersResponse(relationships)
 	ec := json.NewEncoder(w)
 	if err := ec.Encode(resp); err != nil {
 		log.Logger.Error(errors.Wrap(err, "ec.Encode failed"))
