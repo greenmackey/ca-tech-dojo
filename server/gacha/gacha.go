@@ -2,11 +2,10 @@ package gacha
 
 import (
 	"ca-tech-dojo/controller/gacha"
-	"ca-tech-dojo/controller/reluc"
+	"ca-tech-dojo/controller/usercharacter"
 	"ca-tech-dojo/log"
-	"ca-tech-dojo/model/character"
-	Reluc "ca-tech-dojo/model/reluc"
 	"ca-tech-dojo/model/user"
+	Usercharacter "ca-tech-dojo/model/usercharacter"
 	"ca-tech-dojo/server"
 	"encoding/json"
 	"net/http"
@@ -35,36 +34,33 @@ func DrawGacha(w http.ResponseWriter, r *http.Request) {
 
 	// リクエストbodyの内容取得
 	// ガチャ回数を受け取る
-	b := struct{ Times int }{Times: -1}
+	reqBody := DrawGachaRequest{Times: -1}
 	dc := json.NewDecoder(r.Body)
-	err := dc.Decode(&b)
-	if err != nil || b.Times < 0 {
+	err := dc.Decode(&reqBody)
+	if err != nil || reqBody.Times < 0 {
 		http.Error(w, server.InvalidBodyMsg, http.StatusBadRequest)
 		return
 	}
 
 	// ガチャを作成
-	g, err := gacha.New()
+	gachaEntity, err := gacha.New()
 	if err != nil {
 		http.Error(w, server.InternalErrMsg, http.StatusInternalServerError)
-		log.Logger.Error(errors.Wrap(err, "gacha.New failed"))
+		log.Logger.Error(errors.Wrap(err, "gachaEntity.New failed"))
 		return
 	}
 	// ガチャ結果を取得，保存
-	characters := g.Draw(uint(b.Times))
-	rels := reluc.ToRelationship(token, characters)
-	if err := Reluc.BulkCreate(rels); err != nil {
+	characters := gachaEntity.Draw(uint(reqBody.Times))
+	relationships := usercharacter.ToRelationship(token, characters)
+	if err := Usercharacter.BulkCreate(relationships); err != nil {
 		http.Error(w, server.InternalErrMsg, http.StatusInternalServerError)
-		log.Logger.Error(errors.Wrap(err, "Reluc.BulkCreate failed"))
+		log.Logger.Error(errors.Wrap(err, "usercharacter.BulkCreate failed"))
 		return
 	}
 
 	// レスボンスbodyの作成
 	// ガチャ結果を返す
-	var resp struct {
-		Characters []*character.Character `json:"results"`
-	}
-	resp.Characters = characters
+	resp := DrawGachaResponse{Characters: characters}
 	ec := json.NewEncoder(w)
 	if err := ec.Encode(resp); err != nil {
 		log.Logger.Error(errors.Wrap(err, "ec.Encode failed"))

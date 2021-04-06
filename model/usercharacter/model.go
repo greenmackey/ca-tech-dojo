@@ -1,4 +1,4 @@
-package reluc
+package usercharacter
 
 import (
 	"ca-tech-dojo/db"

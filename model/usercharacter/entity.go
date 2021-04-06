@@ -1,4 +1,4 @@
-package reluc
+package usercharacter
 
 type Relationship struct {
 	Id            int    `json:"userCharacterID,string"`
