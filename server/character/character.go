@@ -12,15 +12,6 @@ import (
 )
 
 func ListCharacters(w http.ResponseWriter, r *http.Request) {
-	// CORS対応
-	server.CORSOrigin(w, r)
-
-	// CORS preflight requestをさばく
-	if r.Method == "OPTIONS" {
-		server.CORSHeader(w)
-		return
-	}
-
 	// トークンの取得
 	token := server.GetToken(r)
 

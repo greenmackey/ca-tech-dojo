@@ -5,6 +5,7 @@ import (
 	"ca-tech-dojo/log"
 	"ca-tech-dojo/server/character"
 	"ca-tech-dojo/server/gacha"
+	"ca-tech-dojo/server/middleware"
 	"ca-tech-dojo/server/user"
 	"fmt"
 	"net/http"
@@ -35,13 +36,15 @@ func main() {
 
 	// ルーティングとサーバの起動
 	r := mux.NewRouter()
-	u := r.PathPrefix("/user").Subrouter()
-	u.HandleFunc("/create", user.CreateUser).Methods("POST", "OPTIONS")
-	u.HandleFunc("/get", user.GetUser).Methods("GET", "OPTIONS")
-	u.HandleFunc("/update", user.UpdateUser).Methods("PUT", "OPTIONS")
+	// CORS Access-Control-Allowed-Methodsを自動的に付加
+	r.Use(mux.CORSMethodMiddleware(r))
+	// CORS その他のヘッダーを付加 & preflight requestをさばく
+	r.Use(middleware.CORSMiddleware(r))
+
+	r.HandleFunc("/user/create", user.CreateUser).Methods("POST", "OPTIONS")
+	r.HandleFunc("/user/get", user.GetUser).Methods("GET", "OPTIONS")
+	r.HandleFunc("/user/update", user.UpdateUser).Methods("PUT", "OPTIONS")
 	r.HandleFunc("/gacha/draw", gacha.DrawGacha).Methods("POST", "OPTIONS")
 	r.HandleFunc("/character/list", character.ListCharacters).Methods("GET", "OPTIONS")
-	// CORS Access-Control-Allowed-Methodsを自動的に付加
-	u.Use(mux.CORSMethodMiddleware(u))
 	log.Logger.Fatal(http.ListenAndServe(":8080", r))
 }

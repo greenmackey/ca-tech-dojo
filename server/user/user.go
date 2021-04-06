@@ -13,15 +13,6 @@ import (
 )
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
-	// CORS対応
-	server.CORSOrigin(w, r)
-
-	// CORS preflight requestをさばく
-	if r.Method == "OPTIONS" {
-		server.CORSHeader(w)
-		return
-	}
-
 	// リクエストbodyの内容を取得
 	// 新規ユーザの名前を受け取る
 	reqBody := new(CreateUserRequest)
@@ -55,15 +46,6 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetUser(w http.ResponseWriter, r *http.Request) {
-	// CORS対応
-	server.CORSOrigin(w, r)
-
-	// CORS preflight requestをさばく
-	if r.Method == "OPTIONS" {
-		server.CORSHeader(w)
-		return
-	}
-
 	// トークン取得
 	token := server.GetToken(r)
 
@@ -86,15 +68,6 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
-	// CORS対応
-	server.CORSOrigin(w, r)
-
-	// CORS preflight requestをさばく
-	if r.Method == "OPTIONS" {
-		server.CORSHeader(w)
-		return
-	}
-
 	// トークンの取得
 	token := server.GetToken(r)
 
