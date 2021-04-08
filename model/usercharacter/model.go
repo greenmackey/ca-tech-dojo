@@ -3,6 +3,7 @@ package usercharacter
 import (
 	"ca-tech-dojo/db"
 	"ca-tech-dojo/log"
+	"context"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -49,4 +50,35 @@ func Get(token string) ([]Relationship, error) {
 		rels = append(rels, rel)
 	}
 	return rels, nil
+}
+
+func Sell(token string, userCharacterId int) error {
+	tx, err := db.DB.BeginTx(context.Background(), nil)
+	if err != nil {
+		return errors.Wrap(err, "BeginTx failed")
+	}
+
+	userCharacterDeleteQuery := "DELETE FROM rel_user_character WHERE id = ?"
+	if _, err := tx.Exec(userCharacterDeleteQuery, userCharacterId); err != nil {
+		err = errors.Wrap(err, "userPointQuery failed")
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return errors.Wrapf(err, "Rollback failed: %v", rollbackErr)
+		}
+		return err
+	}
+
+	userPointQuery := "UPDATE users SET point = point + (SELECT C.point FROM characters AS C INNER JOIN rel_user_character AS R ON C.id = R.character_id AND R.id=?) WHERE token= ?"
+	if _, err := tx.Exec(userPointQuery, userCharacterId, token); err != nil {
+		err = errors.Wrap(err, "userPointQuery failed")
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return errors.Wrapf(err, "Rollback failed: %v", rollbackErr)
+		}
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return errors.Wrap(err, "tx.Commit failed")
+	}
+
+	return nil
 }

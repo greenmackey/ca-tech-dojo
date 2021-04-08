@@ -46,5 +46,6 @@ func main() {
 	r.HandleFunc("/user/update", user.UpdateUser).Methods("PUT", "OPTIONS")
 	r.HandleFunc("/gacha/draw", gacha.DrawGacha).Methods("POST", "OPTIONS")
 	r.HandleFunc("/character/list", character.ListCharacters).Methods("GET", "OPTIONS")
+	r.HandleFunc("/character/sell", character.SellCharacter).Methods("POST", "OPTIONS")
 	log.Logger.Fatal(http.ListenAndServe(":8080", r))
 }

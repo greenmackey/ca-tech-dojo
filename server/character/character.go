@@ -39,3 +39,30 @@ func ListCharacters(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func SellCharacter(w http.ResponseWriter, r *http.Request) {
+	// トークンの取得
+	token := server.GetToken(r)
+
+	// 該当するユーザの存在確認
+	if err := user.Verify(token); err != nil {
+		http.Error(w, server.InvalidTokenMsg, http.StatusBadRequest)
+		return
+	}
+
+	// リクエストbodyの内容取得
+	// userCharacterIdを受け取る
+	reqBody := new(SellCharacterRequest)
+	dc := json.NewDecoder(r.Body)
+	err := dc.Decode(&reqBody)
+	if err != nil {
+		http.Error(w, server.InvalidBodyMsg, http.StatusBadRequest)
+		return
+	}
+
+	//	ユーザのポイント変更とuserCharacterの削除
+	if err := usercharacter.Sell(token, reqBody.Id); err != nil {
+		log.Logger.Error(errors.Wrap(err, "usercharacter.Sell failed"))
+		http.Error(w, server.InvalidBodyMsg, http.StatusBadRequest)
+	}
+}
