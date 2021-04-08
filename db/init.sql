@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `token` varchar(50) NOT NULL,
   `name` varchar(20) NOT NULL,
   `id` int NOT NULL AUTO_INCREMENT,
+  `point` int UNSIGNED NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `token` (`token`)
 );
@@ -10,6 +11,7 @@ CREATE TABLE IF NOT EXISTS `characters` (
   `id` int NOT NULL AUTO_INCREMENT,
   `name` varchar(20) NOT NULL,
   `likelihood` int UNSIGNED NOT NULL DEFAULT '0',
+  `point` int UNSIGNED NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
 );
