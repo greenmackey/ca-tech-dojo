@@ -3,6 +3,7 @@ package usercharacter
 import (
 	"ca-tech-dojo/db"
 	"ca-tech-dojo/log"
+	"context"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -49,4 +50,42 @@ func Get(token string) ([]Relationship, error) {
 		rels = append(rels, rel)
 	}
 	return rels, nil
+}
+
+func Sell(token string, characterId int) error {
+	tx, err := db.DB.BeginTx(context.Background(), nil)
+	if err != nil {
+		return errors.Wrap(err, "BeginTx failed")
+	}
+
+	userCharacterDeleteQuery := "DELETE FROM rel_user_character WHERE user_token = ? AND character_id = ? LIMIT 1"
+	if result, err := tx.Exec(userCharacterDeleteQuery, token, characterId); err != nil {
+		err = errors.Wrap(err, "userPointQuery failed")
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return errors.Wrapf(err, "Rollback failed: %v", rollbackErr)
+		}
+		return err
+	} else if n, _ := result.RowsAffected(); n == 0 {
+		err = errors.Wrap(newQueryErr("The user has no character of that type"), "userPointQuery failed")
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return errors.Wrapf(err, "Rollback failed: %v", rollbackErr)
+		}
+		return err
+	}
+
+	userPointQuery := "UPDATE users SET point = point + (SELECT point FROM characters WHERE id = ?) WHERE token = ?"
+	if _, err := tx.Exec(userPointQuery, characterId, token); err != nil {
+		err = errors.Wrap(err, "userPointQuery failed")
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return errors.Wrapf(err, "Rollback failed: %v", rollbackErr)
+		}
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return errors.Wrap(err, "tx.Commit failed")
+	}
+
+	log.Logger.Info("Delete user-character relationships and update point of user")
+	return nil
 }

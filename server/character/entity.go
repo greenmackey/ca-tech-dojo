@@ -26,3 +26,7 @@ func NewListCharactersResponse(relationships []usercharacter.Relationship) listC
 	}
 	return resp
 }
+
+type SellCharacterRequest struct {
+	Id int `json:"characterID,string"`
+}

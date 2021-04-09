@@ -12,15 +12,6 @@ import (
 )
 
 func ListCharacters(w http.ResponseWriter, r *http.Request) {
-	// CORS対応
-	server.CORSOrigin(w, r)
-
-	// CORS preflight requestをさばく
-	if r.Method == "OPTIONS" {
-		server.CORSHeader(w)
-		return
-	}
-
 	// トークンの取得
 	token := server.GetToken(r)
 
@@ -46,5 +37,36 @@ func ListCharacters(w http.ResponseWriter, r *http.Request) {
 		log.Logger.Error(errors.Wrap(err, "ec.Encode failed"))
 		http.Error(w, server.InternalErrMsg, http.StatusInternalServerError)
 		return
+	}
+}
+
+func SellCharacter(w http.ResponseWriter, r *http.Request) {
+	// トークンの取得
+	token := server.GetToken(r)
+
+	// 該当するユーザの存在確認
+	if err := user.Verify(token); err != nil {
+		http.Error(w, server.InvalidTokenMsg, http.StatusBadRequest)
+		return
+	}
+
+	// リクエストbodyの内容取得
+	// CharacterIdを受け取る
+	reqBody := new(SellCharacterRequest)
+	dc := json.NewDecoder(r.Body)
+	err := dc.Decode(&reqBody)
+	if err != nil {
+		http.Error(w, server.InvalidBodyMsg, http.StatusBadRequest)
+		return
+	}
+
+	//	ユーザのポイント変更とuserCharacterの削除
+	if err := usercharacter.Sell(token, reqBody.Id); err != nil {
+		if _, ok := errors.Cause(err).(interface{ NotFound() bool }); ok {
+			http.Error(w, server.InvalidBodyMsg, http.StatusBadRequest)
+		} else {
+			log.Logger.Error(errors.Wrap(err, "usercharacter.Sell failed"))
+			http.Error(w, server.InternalErrMsg, http.StatusInternalServerError)
+		}
 	}
 }
