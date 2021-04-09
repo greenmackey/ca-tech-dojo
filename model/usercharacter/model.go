@@ -52,33 +52,29 @@ func Get(token string) ([]Relationship, error) {
 	return rels, nil
 }
 
-func Sell(token string, userCharacterId int) error {
+func Sell(token string, characterId int) error {
 	tx, err := db.DB.BeginTx(context.Background(), nil)
 	if err != nil {
 		return errors.Wrap(err, "BeginTx failed")
 	}
 
-	characterPointQuery := "SELECT C.point FROM characters AS C INNER JOIN rel_user_character AS R ON C.id = R.character_id AND R.id = ?"
-	var characterPoint int
-	if err := tx.QueryRow(characterPointQuery, userCharacterId).Scan(&characterPoint); err != nil {
-		err = errors.Wrap(err, "characterPointQuery failed")
-		if rollbackErr := tx.Rollback(); rollbackErr != nil {
-			return errors.Wrapf(err, "Rollback failed: %v", rollbackErr)
-		}
-		return err
-	}
-
-	userPointQuery := "UPDATE users SET point = point + (SELECT C.point FROM characters AS C INNER JOIN rel_user_character AS R ON C.id = R.character_id AND R.id=?) WHERE token= ?"
-	if _, err := tx.Exec(userPointQuery, userCharacterId, token); err != nil {
+	userCharacterDeleteQuery := "DELETE FROM rel_user_character WHERE user_token = ? AND character_id = ? LIMIT 1"
+	if result, err := tx.Exec(userCharacterDeleteQuery, token, characterId); err != nil {
 		err = errors.Wrap(err, "userPointQuery failed")
 		if rollbackErr := tx.Rollback(); rollbackErr != nil {
 			return errors.Wrapf(err, "Rollback failed: %v", rollbackErr)
 		}
 		return err
+	} else if n, _ := result.RowsAffected(); n == 0 {
+		err = errors.Wrap(newQueryErr("The user has no character of that type"), "userPointQuery failed")
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return errors.Wrapf(err, "Rollback failed: %v", rollbackErr)
+		}
+		return err
 	}
 
-	userCharacterDeleteQuery := "DELETE FROM rel_user_character WHERE id = ?"
-	if _, err := tx.Exec(userCharacterDeleteQuery, userCharacterId); err != nil {
+	userPointQuery := "UPDATE users SET point = point + (SELECT point FROM characters WHERE id = ?) WHERE token = ?"
+	if _, err := tx.Exec(userPointQuery, characterId, token); err != nil {
 		err = errors.Wrap(err, "userPointQuery failed")
 		if rollbackErr := tx.Rollback(); rollbackErr != nil {
 			return errors.Wrapf(err, "Rollback failed: %v", rollbackErr)

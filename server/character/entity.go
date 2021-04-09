@@ -7,5 +7,5 @@ type ListCharactersResponse struct {
 }
 
 type SellCharacterRequest struct {
-	Id int `json:"userCharacterID,string"`
+	Id int `json:"characterID,string"`
 }

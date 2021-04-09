@@ -51,7 +51,7 @@ func SellCharacter(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// リクエストbodyの内容取得
-	// userCharacterIdを受け取る
+	// CharacterIdを受け取る
 	reqBody := new(SellCharacterRequest)
 	dc := json.NewDecoder(r.Body)
 	err := dc.Decode(&reqBody)
@@ -62,7 +62,11 @@ func SellCharacter(w http.ResponseWriter, r *http.Request) {
 
 	//	ユーザのポイント変更とuserCharacterの削除
 	if err := usercharacter.Sell(token, reqBody.Id); err != nil {
-		log.Logger.Error(errors.Wrap(err, "usercharacter.Sell failed"))
-		http.Error(w, server.InvalidBodyMsg, http.StatusBadRequest)
+		if _, ok := errors.Cause(err).(interface{ NotFound() bool }); ok {
+			http.Error(w, server.InvalidBodyMsg, http.StatusBadRequest)
+		} else {
+			log.Logger.Error(errors.Wrap(err, "usercharacter.Sell failed"))
+			http.Error(w, server.InternalErrMsg, http.StatusInternalServerError)
+		}
 	}
 }
