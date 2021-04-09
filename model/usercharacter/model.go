@@ -58,9 +58,10 @@ func Sell(token string, userCharacterId int) error {
 		return errors.Wrap(err, "BeginTx failed")
 	}
 
-	userCharacterDeleteQuery := "DELETE FROM rel_user_character WHERE id = ?"
-	if _, err := tx.Exec(userCharacterDeleteQuery, userCharacterId); err != nil {
-		err = errors.Wrap(err, "userPointQuery failed")
+	characterPointQuery := "SELECT C.point FROM characters AS C INNER JOIN rel_user_character AS R ON C.id = R.character_id AND R.id = ?"
+	var characterPoint int
+	if err := tx.QueryRow(characterPointQuery, userCharacterId).Scan(&characterPoint); err != nil {
+		err = errors.Wrap(err, "characterPointQuery failed")
 		if rollbackErr := tx.Rollback(); rollbackErr != nil {
 			return errors.Wrapf(err, "Rollback failed: %v", rollbackErr)
 		}
@@ -76,9 +77,19 @@ func Sell(token string, userCharacterId int) error {
 		return err
 	}
 
+	userCharacterDeleteQuery := "DELETE FROM rel_user_character WHERE id = ?"
+	if _, err := tx.Exec(userCharacterDeleteQuery, userCharacterId); err != nil {
+		err = errors.Wrap(err, "userPointQuery failed")
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return errors.Wrapf(err, "Rollback failed: %v", rollbackErr)
+		}
+		return err
+	}
+
 	if err := tx.Commit(); err != nil {
 		return errors.Wrap(err, "tx.Commit failed")
 	}
 
+	log.Logger.Info("Delete user-character relationships and update point of user")
 	return nil
 }
