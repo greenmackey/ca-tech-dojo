@@ -70,3 +70,40 @@ func SellCharacter(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 }
+
+func BuyCharacter(w http.ResponseWriter, r *http.Request) {
+	// トークンの取得
+	token := server.GetToken(r)
+
+	// 該当するユーザの存在確認
+	if err := user.Verify(token); err != nil {
+		http.Error(w, server.InvalidTokenMsg, http.StatusBadRequest)
+		return
+	}
+
+	// リクエストbodyの内容取得
+	// CharacterIdを受け取る
+	reqBody := new(BuyCharacterRequest)
+	dc := json.NewDecoder(r.Body)
+	err := dc.Decode(&reqBody)
+	if err != nil {
+		http.Error(w, server.InvalidBodyMsg, http.StatusBadRequest)
+		return
+	}
+
+	// ポイントが十分にあるかチェック
+	if ok, err := usercharacter.CheckBuyFeasibility(token, reqBody.Id); err != nil {
+		log.Logger.Error(errors.Wrap(err, "usercharacter.CheckBuyFeasibility failed"))
+		http.Error(w, server.InternalErrMsg, http.StatusInternalServerError)
+		return
+	} else if !ok {
+		http.Error(w, server.InvalidBodyMsg, http.StatusBadRequest)
+		return
+	}
+
+	//	ユーザのポイント変更とuserCharacterの追加
+	if err := usercharacter.Buy(token, reqBody.Id); err != nil {
+		log.Logger.Error(errors.Wrap(err, "usercharacter.Buy failed"))
+		http.Error(w, server.InternalErrMsg, http.StatusInternalServerError)
+	}
+}

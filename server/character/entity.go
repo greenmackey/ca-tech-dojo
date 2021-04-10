@@ -30,3 +30,7 @@ func NewListCharactersResponse(relationships []usercharacter.Relationship) listC
 type SellCharacterRequest struct {
 	Id int `json:"characterID,string"`
 }
+
+type BuyCharacterRequest struct {
+	Id int `json:"characterID,string"`
+}
