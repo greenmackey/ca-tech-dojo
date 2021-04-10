@@ -48,5 +48,6 @@ func main() {
 	r.HandleFunc("/character/list", character.ListCharacters).Methods("GET", "OPTIONS")
 	r.HandleFunc("/character/sell", character.SellCharacter).Methods("POST", "OPTIONS")
 	r.HandleFunc("/character/buy", character.BuyCharacter).Methods("POST", "OPTIONS")
+	r.HandleFunc("/character/all", character.GetAllCharacters).Methods("GET")
 	log.Logger.Fatal(http.ListenAndServe(":8080", r))
 }

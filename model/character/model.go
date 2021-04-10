@@ -8,18 +8,18 @@ import (
 )
 
 func All() ([]*Character, error) {
-	q := "SELECT id, name, likelihood FROM characters ORDER BY id ASC"
+	q := "SELECT id, name, likelihood, point FROM characters ORDER BY id ASC"
 	rows, err := db.DB.Query(q)
 	if err != nil {
 		return nil, errors.Wrap(err, "Select query failed")
 	}
-	log.Logger.Info("Get characters info for creating a gacha")
+	log.Logger.Info("Get all characters")
 
 	var characters []*Character
 
 	for rows.Next() {
 		var c Character
-		if err := rows.Scan(&c.Id, &c.Name, &c.Likelihood); err != nil {
+		if err := rows.Scan(&c.Id, &c.Name, &c.Likelihood, &c.Point); err != nil {
 			return nil, errors.Wrap(err, "rows.Scan failed")
 		}
 		characters = append(characters, &c)

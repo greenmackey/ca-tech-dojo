@@ -2,6 +2,7 @@ package character
 
 import (
 	"ca-tech-dojo/log"
+	"ca-tech-dojo/model/character"
 	"ca-tech-dojo/model/user"
 	"ca-tech-dojo/model/usercharacter"
 	"ca-tech-dojo/server"
@@ -106,4 +107,25 @@ func BuyCharacter(w http.ResponseWriter, r *http.Request) {
 		log.Logger.Error(errors.Wrap(err, "usercharacter.Buy failed"))
 		http.Error(w, server.InternalErrMsg, http.StatusInternalServerError)
 	}
+}
+
+func GetAllCharacters(w http.ResponseWriter, r *http.Request) {
+
+	characters, err := character.All()
+	if err != nil {
+		log.Logger.Error(errors.Wrap(err, "character.All failed"))
+		http.Error(w, server.InternalErrMsg, http.StatusInternalServerError)
+		return
+	}
+
+	// レスポンスbodyの作成
+	// 該当ユーザのガチャ結果を返す
+	resp := NewGetAllCharactersResponse(characters)
+	ec := json.NewEncoder(w)
+	if err := ec.Encode(resp); err != nil {
+		log.Logger.Error(errors.Wrap(err, "ec.Encode failed"))
+		http.Error(w, server.InternalErrMsg, http.StatusInternalServerError)
+		return
+	}
+
 }
