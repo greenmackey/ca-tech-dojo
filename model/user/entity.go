@@ -1,5 +1,6 @@
 package user
 
 type User struct {
-	Name string
+	Name  string
+	Point uint
 }

@@ -19,8 +19,8 @@ func Create(token, name string) error {
 
 func Get(token string) (User, error) {
 	var user User
-	q := "SELECT name FROM users WHERE token = ?"
-	if err := db.DB.QueryRow(q, token).Scan(&user.Name); err != nil {
+	q := "SELECT name, point FROM users WHERE token = ?"
+	if err := db.DB.QueryRow(q, token).Scan(&user.Name, &user.Point); err != nil {
 		return user, errors.Wrap(err, "Select query failed")
 	}
 	log.Logger.Info("Get a user")

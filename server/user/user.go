@@ -58,7 +58,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 
 	// レスポンスbodyの作成
 	// ユーザの名前を返す
-	resp := GetUserResponse{Name: userEntity.Name}
+	resp := newGetUserResponse(userEntity)
 	ec := json.NewEncoder(w)
 	err = ec.Encode(resp)
 	if err != nil {
