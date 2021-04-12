@@ -13,6 +13,7 @@ type listCharactersResponseRelationship struct {
 	UserCharacterId int    `json:"userCharacterID,string"`
 	CharacterId     int    `json:"characterID,string"`
 	CharacterName   string `json:"name"`
+	CharacterPoint  uint   `json:"point"`
 }
 
 func NewListCharactersResponse(relationships []usercharacter.Relationship) listCharactersResponse {
@@ -24,6 +25,7 @@ func NewListCharactersResponse(relationships []usercharacter.Relationship) listC
 			UserCharacterId: relationship.Id,
 			CharacterId:     relationship.CharacterId,
 			CharacterName:   relationship.CharacterName,
+			CharacterPoint:  relationship.CharacterPoint,
 		}
 		resp.UserCharacters = append(resp.UserCharacters, userCharacterEntity)
 	}

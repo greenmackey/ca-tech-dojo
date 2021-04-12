@@ -11,8 +11,9 @@ type drawGachaResponse struct {
 }
 
 type drawGachaResponseCharacter struct {
-	Id   int    `json:"characterID,string"`
-	Name string `json:"name"`
+	Id    int    `json:"characterID,string"`
+	Name  string `json:"name"`
+	Point uint   `json:"point"`
 }
 
 func newDrawGachaResponse(characters []*character.Character) drawGachaResponse {
@@ -21,8 +22,9 @@ func newDrawGachaResponse(characters []*character.Character) drawGachaResponse {
 	}
 	for _, c := range characters {
 		respCharacter := drawGachaResponseCharacter{
-			Id:   c.Id,
-			Name: c.Name,
+			Id:    c.Id,
+			Name:  c.Name,
+			Point: c.Point,
 		}
 		resp.Characters = append(resp.Characters, respCharacter)
 	}

@@ -32,9 +32,9 @@ func BulkCreate(rels []Relationship) error {
 }
 
 func Get(token string) ([]Relationship, error) {
-	var rels []Relationship
+	var relationships []Relationship
 
-	q := "SELECT r.id, chars.id, chars.name FROM rel_user_character AS r INNER JOIN characters AS chars ON r.character_id = chars.id AND r.user_token = ?"
+	q := "SELECT R.id, C.id, C.name, C.point FROM rel_user_character AS R INNER JOIN characters AS C ON R.character_id = C.id AND R.user_token = ?"
 	rows, err := db.DB.Query(q, token)
 	if err != nil {
 		return nil, errors.Wrap(err, "Select query failed")
@@ -43,13 +43,13 @@ func Get(token string) ([]Relationship, error) {
 
 	// ガチャ結果をスライス relsに格納
 	for rows.Next() {
-		var rel Relationship
-		if err := rows.Scan(&rel.Id, &rel.CharacterId, &rel.CharacterName); err != nil {
+		var relation Relationship
+		if err := rows.Scan(&relation.Id, &relation.CharacterId, &relation.CharacterName, &relation.CharacterPoint); err != nil {
 			return nil, errors.Wrap(err, "rows.Scan failed")
 		}
-		rels = append(rels, rel)
+		relationships = append(relationships, relation)
 	}
-	return rels, nil
+	return relationships, nil
 }
 
 func Sell(token string, characterId int) error {
