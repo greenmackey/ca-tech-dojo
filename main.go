@@ -36,18 +36,21 @@ func main() {
 
 	// ルーティングとサーバの起動
 	r := mux.NewRouter()
-	// CORS Access-Control-Allowed-Methodsを自動的に付加
-	r.Use(mux.CORSMethodMiddleware(r))
-	// CORS その他のヘッダーを付加 & preflight requestをさばく
+	// X-Tokenを扱うrouterを用意
+	privateRouter := r.NewRoute().Subrouter()
+
+	// CORS ヘッダーを付加 & preflight requestをさばく
 	r.Use(middleware.CORSMiddleware(r))
+	// X-Tokenの存在確認
+	privateRouter.Use(middleware.TokenMiddleware(privateRouter))
 
 	r.HandleFunc("/user/create", user.CreateUser).Methods("POST", "OPTIONS")
-	r.HandleFunc("/user/get", user.GetUser).Methods("GET", "OPTIONS")
-	r.HandleFunc("/user/update", user.UpdateUser).Methods("PUT", "OPTIONS")
-	r.HandleFunc("/gacha/draw", gacha.DrawGacha).Methods("POST", "OPTIONS")
-	r.HandleFunc("/character/list", character.ListCharacters).Methods("GET", "OPTIONS")
-	r.HandleFunc("/character/sell", character.SellCharacter).Methods("POST", "OPTIONS")
-	r.HandleFunc("/character/buy", character.BuyCharacter).Methods("POST", "OPTIONS")
+	privateRouter.HandleFunc("/user/get", user.GetUser).Methods("GET", "OPTIONS")
+	privateRouter.HandleFunc("/user/update", user.UpdateUser).Methods("PUT", "OPTIONS")
+	privateRouter.HandleFunc("/gacha/draw", gacha.DrawGacha).Methods("POST", "OPTIONS")
+	privateRouter.HandleFunc("/character/list", character.ListCharacters).Methods("GET", "OPTIONS")
+	privateRouter.HandleFunc("/character/sell", character.SellCharacter).Methods("POST", "OPTIONS")
+	privateRouter.HandleFunc("/character/buy", character.BuyCharacter).Methods("POST", "OPTIONS")
 	r.HandleFunc("/character/all", character.GetAllCharacters).Methods("GET")
 	log.Logger.Fatal(http.ListenAndServe(":8080", r))
 }

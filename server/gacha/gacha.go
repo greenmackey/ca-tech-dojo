@@ -4,7 +4,6 @@ import (
 	"ca-tech-dojo/controller/gacha"
 	"ca-tech-dojo/controller/usercharacter"
 	"ca-tech-dojo/log"
-	"ca-tech-dojo/model/user"
 	Usercharacter "ca-tech-dojo/model/usercharacter"
 	"ca-tech-dojo/server"
 	"encoding/json"
@@ -15,13 +14,7 @@ import (
 
 func DrawGacha(w http.ResponseWriter, r *http.Request) {
 	// トークンの取得
-	token := server.GetToken(r)
-
-	// 該当するユーザの存在確認
-	if err := user.Verify(token); err != nil {
-		http.Error(w, server.InvalidTokenMsg, http.StatusBadRequest)
-		return
-	}
+	token := r.Header.Get("X-Token")
 
 	// リクエストbodyの内容取得
 	// ガチャ回数を受け取る

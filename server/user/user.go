@@ -47,12 +47,12 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	// トークン取得
-	token := server.GetToken(r)
+	token := r.Header.Get("X-Token")
 
 	// DBからユーザ情報取得
 	userEntity, err := user.Get(token)
 	if err != nil {
-		http.Error(w, server.InvalidTokenMsg, http.StatusBadRequest)
+		http.Error(w, server.InternalErrMsg, http.StatusInternalServerError)
 		return
 	}
 
@@ -70,13 +70,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	// トークンの取得
-	token := server.GetToken(r)
-
-	// 該当するユーザの存在確認
-	if err := user.Verify(token); err != nil {
-		http.Error(w, server.InvalidTokenMsg, http.StatusBadRequest)
-		return
-	}
+	token := r.Header.Get("X-Token")
 
 	// リクエストbodyの内容取得
 	// 新しいユーザの名前を取得

@@ -3,7 +3,6 @@ package character
 import (
 	"ca-tech-dojo/log"
 	"ca-tech-dojo/model/character"
-	"ca-tech-dojo/model/user"
 	"ca-tech-dojo/model/usercharacter"
 	"ca-tech-dojo/server"
 	"encoding/json"
@@ -14,13 +13,7 @@ import (
 
 func ListCharacters(w http.ResponseWriter, r *http.Request) {
 	// トークンの取得
-	token := server.GetToken(r)
-
-	// 該当するユーザの存在確認
-	if err := user.Verify(token); err != nil {
-		http.Error(w, server.InvalidTokenMsg, http.StatusBadRequest)
-		return
-	}
+	token := r.Header.Get("X-Token")
 
 	// DBからユーザのガチャ結果を取得
 	relationships, err := usercharacter.Get(token)
@@ -43,13 +36,7 @@ func ListCharacters(w http.ResponseWriter, r *http.Request) {
 
 func SellCharacter(w http.ResponseWriter, r *http.Request) {
 	// トークンの取得
-	token := server.GetToken(r)
-
-	// 該当するユーザの存在確認
-	if err := user.Verify(token); err != nil {
-		http.Error(w, server.InvalidTokenMsg, http.StatusBadRequest)
-		return
-	}
+	token := r.Header.Get("X-Token")
 
 	// リクエストbodyの内容取得
 	// CharacterIdを受け取る
@@ -74,13 +61,7 @@ func SellCharacter(w http.ResponseWriter, r *http.Request) {
 
 func BuyCharacter(w http.ResponseWriter, r *http.Request) {
 	// トークンの取得
-	token := server.GetToken(r)
-
-	// 該当するユーザの存在確認
-	if err := user.Verify(token); err != nil {
-		http.Error(w, server.InvalidTokenMsg, http.StatusBadRequest)
-		return
-	}
+	token := r.Header.Get("X-Token")
 
 	// リクエストbodyの内容取得
 	// CharacterIdを受け取る
